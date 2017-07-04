@@ -2,7 +2,9 @@
 module Main where
 
 import Data.Array
+import Data.Char
 import Data.List
+import Data.Maybe
 import Data.Ord (comparing)
 
 import Debug.Trace
@@ -37,7 +39,6 @@ data Game = Game
   { gameInput :: GameInput
   , gameLevel :: Int
   , gameLevels :: Array Int Level
-  , gameLives :: Int
   , signal :: Signal
   , compass :: Compass
   }
@@ -87,7 +88,6 @@ loadInitialGame = do
     { gameInput = initialGameInput
     , gameLevel = 1
     , gameLevels = levels
-    , gameLives = numLives
     , signal = signal
     , compass = compass
     }
@@ -135,7 +135,7 @@ loadSignal :: IO Signal
 loadSignal = do
   signalPic <- loadPNG "images/signal.png"
   return Signal
-    { signalLives = 5
+    { signalLives = numLives
     , signalPic = signalPic
     , signalLocation = initialSignalLocation
     , signalDelay = 0
@@ -179,7 +179,7 @@ initialGameInput =
   , (upKey, Up)
   , (spaceKey, Up)
   , (enterKey, Up)
-  ]
+  ] ++ map (\c -> (Char c, Up)) ['0'..'9']
 
 leftKey, rightKey, upKey, downKey, spaceKey, enterKey :: Key
 leftKey = SpecialKey KeyLeft
@@ -224,7 +224,7 @@ getGutterArea game@Game{..} =
     levelText = Translate 10 460 $ createBigText $ "Level " ++ show gameLevel ++ ":"
     cacheType = Translate 10 430 $ createBigText levelName
 
-    livesText = Translate 10 350 $ createSmallText $ "Lives: " ++ show gameLives
+    livesText = Translate 10 350 $ createSmallText $ "Lives: " ++ show (signalLives signal)
     cachesLeftText = Translate 10 320 $ createSmallText $ "Caches left: " ++ show cachesLeft
 
     level@Level{..} = getCurrentLevel game
@@ -260,23 +260,42 @@ isKeyDown key gameInput = case lookup key gameInput of
   Just keyState -> keyState == Down
   Nothing -> False
 
+getNumKeyDown :: GameInput -> Maybe Int
+getNumKeyDown gameInput = if null levels then Nothing else Just (head levels)
+  where levels = [ levelNum | (Char c, Down) <- gameInput,
+                   '0' <= c && c <= '9',
+                   let levelNum = if c == '0' then 10 else digitToInt c ]
+
 updateGame :: Float -> Game -> Game
-updateGame _ game@Game{..} = game
-  { signal = signal'
-  , compass = compass'
-  , gameLevel = gameLevel'
-  , gameLevels = gameLevels'
-  }
+updateGame _ game@Game{..}
+  | isJust jumpToLevel = setLevel (fromJust jumpToLevel) game
+  | otherwise = game
+    { signal = signal'
+    , compass = compass'
+    , gameLevels = gameLevels'
+    }
   where signal' = updateSignal signal gameInput (getCurrentGrid game)
-        compass' = updateCompass compass signal (getCurrentCaches game)
+        compass' = updateCompass compass signal' (getCurrentCaches game)
         gameLevels' = gameLevels // [(gameLevel, updatedLevel)]
         updatedLevel = updateLevel currentLevel signal' gameInput
 
         currentLevel = getCurrentLevel game
         isLevelComplete = getCachesLeft currentLevel == 0
+        shouldProgressLevels = isLevelComplete && gameLevel < numLevels &&
+          isKeyDown enterKey gameInput
 
-        gameLevel' | isLevelComplete && gameLevel < numLevels = gameLevel + 1
-                   | otherwise = gameLevel
+        numKeyDown = getNumKeyDown gameInput
+        jumpToLevel
+          | shouldProgressLevels = Just (gameLevel + 1)
+          | isDebug && isJust numKeyDown = numKeyDown
+          | otherwise = Nothing
+
+setLevel :: Int -> Game -> Game
+setLevel level game@Game{..} = game
+  { signal = signal'
+  , gameLevel = level
+  }
+  where signal' = signal { signalLocation = initialSignalLocation }
 
 updateLevel :: Level -> Signal -> GameInput -> Level
 updateLevel level@Level{..} signal gameInput = level { levelCaches = levelCaches' }
