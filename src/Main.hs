@@ -2,6 +2,10 @@
 module Main where
 
 import Data.Array
+import Data.List
+import Data.Ord (comparing)
+
+import Debug.Trace
 
 import Graphics.Gloss
 import Graphics.Gloss.Data.ViewPort
@@ -10,19 +14,13 @@ import Graphics.Gloss.Juicy
 
 import System.Random
 
+isDebug :: Bool
+isDebug = True
+
 main :: IO ()
 main = do
-  grids <- loadGrids
-  signal <- loadSignal
-  compass <- loadCompass
+  initialGame <- loadInitialGame
   let display = InWindow "Geocaching Game" (windowX, windowY) (200, 200)
-      initialGame = Game
-        { gameGrids = grids
-        , gameInput = initialGameInput
-        , gameLevel = 1
-        , signal = signal
-        , compass = compass
-        }
 
   play
     display
@@ -35,18 +33,26 @@ main = do
 
 type GameInput = [(Key, KeyState)]
 
-data Cache = Cache
-  { cacheLocation :: (Int, Int)
-  , cacheFound :: Bool
-  }
-
 data Game = Game
-  { gameGrids :: Array Int Grid
-  , gameInput :: GameInput
+  { gameInput :: GameInput
   , gameLevel :: Int
+  , gameLevels :: Array Int Level
+  , gameLives :: Int
   , signal :: Signal
   , compass :: Compass
   }
+
+data Level = Level
+  { levelGrid :: Grid
+  , levelCaches :: [Cache]
+  , levelName :: String
+  } deriving Show
+
+data Cache = Cache
+  { cacheLocation :: (Int, Int)
+  , cacheFound :: Bool
+  , cachePic :: Picture
+  } deriving Show
 
 data Compass = Compass
   { compassPic :: Picture
@@ -56,11 +62,74 @@ data Compass = Compass
 data Signal = Signal
   { signalLives :: Int
   , signalPic :: Picture
-  , signalPos :: (Int, Int)
+  , signalLocation :: (Int, Int)
   , signalDelay :: Int
   }
 
-initialSignalPos = (12,12)
+getCurrentGrid :: Game -> Grid
+getCurrentGrid game = levelGrid
+    where Level{..} = getCurrentLevel game
+
+getCurrentCaches :: Game -> [Cache]
+getCurrentCaches game = levelCaches
+  where Level{..} = getCurrentLevel game
+
+getCurrentLevel :: Game -> Level
+getCurrentLevel Game{..} = gameLevels ! gameLevel
+
+loadInitialGame :: IO Game
+loadInitialGame = do
+  signal <- loadSignal
+  levels <- loadLevels
+  let initialCaches = levelCaches (levels ! 1)
+  compass <- loadCompass signal initialCaches
+  return Game
+    { gameInput = initialGameInput
+    , gameLevel = 1
+    , gameLevels = levels
+    , gameLives = numLives
+    , signal = signal
+    , compass = compass
+    }
+
+loadCachePics :: IO (Array Int Picture)
+loadCachePics = do
+  pics <- mapM (\i -> loadPNG ("images/level" ++ show i ++ ".png")) [1..numLevels]
+  return $ listArray (1, numLevels) pics
+
+loadLevels :: IO (Array Int Level)
+loadLevels = do
+  grids <- loadGrids
+  cacheLocations <- mapM getRandomLocations grids
+  cachePics <- loadCachePics
+  let caches = map (\(i, locations) ->
+                map (\location -> Cache
+                  { cacheLocation = location
+                  , cacheFound = False
+                  , cachePic = cachePics ! i
+                  }) locations) $
+                zip [1..] cacheLocations
+      levels = zipWith3 (\grid caches name -> Level
+                { levelGrid = grid
+                , levelCaches = caches
+                , levelName = name
+                }) grids caches levelNames
+  return $ listArray (1, numLevels) levels
+  where levelNames =
+          [ "Traditional Cache"
+          , "Multi-Cache"
+          , "Mystery"
+          , "Virtual Cache"
+          , "Event Cache"
+          , "Letterbox Hybrid"
+          , "EarthCache"
+          , "Webcam Cache"
+          , "Wherigo Cache"
+          , "Mega-Event Cache"
+          ]
+
+initialSignalLocation :: (Int, Int)
+initialSignalLocation = (12,12)
 
 loadSignal :: IO Signal
 loadSignal = do
@@ -68,27 +137,31 @@ loadSignal = do
   return Signal
     { signalLives = 5
     , signalPic = signalPic
-    , signalPos = initialSignalPos
+    , signalLocation = initialSignalLocation
     , signalDelay = 0
     }
 
-loadCompass :: IO Compass
-loadCompass = do
+loadCompass :: Signal -> [Cache] -> IO Compass
+loadCompass signal caches = do
   compassPic <- loadPNG "images/compass.png"
   return Compass
     { compassPic = compassPic
-    , compassAngle = 90
+    , compassAngle = getAngleFromSignalToNearestCache signal caches
     }
 
 getRandomLocations :: Grid -> IO [(Int, Int)]
 getRandomLocations grid = do
-  g <- getStdGen
+  g <- newStdGen
   let coords = map (\[x,y] -> (x,y)) $ chunkify 2 $ randomRs (0, gridTiles - 1) g
-      locs = take 3 $ filter
-        (\(x,y) -> isGridCellFree grid (x,y) && (x,y) /= initialSignalPos)
+      locs = take numCachesPerLevel $ nub $ filter
+        (\(x,y) -> isGridCellFree grid (x,y) && (x,y) /= initialSignalLocation)
         coords
   return locs
 
+numCachesPerLevel, numLevels, numLives :: Int
+numCachesPerLevel = 3
+numLevels = 10
+numLives = 5
 
 gridTiles, gridSize, gutter, tileSize, windowX, windowY :: Int
 gridTiles = 25
@@ -119,22 +192,28 @@ enterKey = SpecialKey KeyEnter
 class Renderable a where
   render :: a -> Picture
 
+instance Renderable a => Renderable [a] where
+  render = pictures . map render
+
 instance Renderable Game where
-  render Game{..} = applyViewPortToPicture viewPort $ Pictures
+  render game@Game{..} = applyViewPortToPicture viewPort $ Pictures
     [ render compass
     , gutterArea
     , Translate (fromIntegral gutter) 0 gridArea
     ]
     where gridArea = Pictures
-            [ render $ gameGrids ! gameLevel
+            [ render $ getCurrentGrid game
+            , render $ getCurrentCaches game
             , render signal
             ]
+          gutterArea = getGutterArea game
           viewPort = viewPortInit {
             viewPortTranslate = (-fromIntegral windowX/2, -fromIntegral windowY/2)
           }
 
-gutterArea :: Picture
-gutterArea = Pictures [levelText, cacheType, livesText, trackablesText, cachesLeftText]
+getGutterArea :: Game -> Picture
+getGutterArea game@Game{..} =
+  Pictures [levelText, cacheType, livesText, cachesLeftText]
   where
     gold = makeColorI 239 174 0 255
     orange = makeColorI 237 100 0 255
@@ -142,15 +221,20 @@ gutterArea = Pictures [levelText, cacheType, livesText, trackablesText, cachesLe
     createBigText = Scale 0.2 0.2 . Color gold . Text
     createSmallText = Scale 0.15 0.15 . Color orange . Text
 
-    levelText = Translate 10 460 $ createBigText "Level 1:"
-    cacheType = Translate 10 430 $ createBigText "Traditional Cache"
+    levelText = Translate 10 460 $ createBigText $ "Level " ++ show gameLevel ++ ":"
+    cacheType = Translate 10 430 $ createBigText levelName
 
-    livesText = Translate 10 350 $ createSmallText "Lives: 5"
-    trackablesText = Translate 10 320 $ createSmallText "Trackables: 0"
-    cachesLeftText = Translate 10 290 $ createSmallText "Caches left: 3"
+    livesText = Translate 10 350 $ createSmallText $ "Lives: " ++ show gameLives
+    cachesLeftText = Translate 10 320 $ createSmallText $ "Caches left: " ++ show cachesLeft
+
+    level@Level{..} = getCurrentLevel game
+    cachesLeft = getCachesLeft level
+
+getCachesLeft :: Level -> Int
+getCachesLeft Level{..} = numCachesPerLevel - length (filter cacheFound levelCaches)
 
 instance Renderable Signal where
-  render Signal{..} = renderOnGrid signalPos signalPic
+  render Signal{..} = renderOnGrid signalLocation signalPic
 
 instance Renderable Compass where
   render Compass{..} = Pictures [compassPic, needle]
@@ -159,6 +243,12 @@ instance Renderable Compass where
             Line [(0, 0), (needleLength * cos rads, needleLength * sin rads)]
           needleLength = 75
           rads = fromIntegral compassAngle * pi / 180
+
+instance Renderable Cache where
+  render Cache{..} = renderOnGrid cacheLocation pic
+    where pic | cacheFound = cachePic
+              | isDebug = Color red $ rectangle tileSize tileSize
+              | otherwise = Blank
 
 handleInput :: Event -> Game -> Game
 handleInput (EventKey key keyState _ _) game@Game{..} = game {gameInput = gameInput'}
@@ -171,26 +261,74 @@ isKeyDown key gameInput = case lookup key gameInput of
   Nothing -> False
 
 updateGame :: Float -> Game -> Game
-updateGame _ game@Game{..} = game { signal = signal' }
-  where signal' = updateSignal signal gameInput (gameGrids ! gameLevel)
+updateGame _ game@Game{..} = game
+  { signal = signal'
+  , compass = compass'
+  , gameLevel = gameLevel'
+  , gameLevels = gameLevels'
+  }
+  where signal' = updateSignal signal gameInput (getCurrentGrid game)
+        compass' = updateCompass compass signal (getCurrentCaches game)
+        gameLevels' = gameLevels // [(gameLevel, updatedLevel)]
+        updatedLevel = updateLevel currentLevel signal' gameInput
+
+        currentLevel = getCurrentLevel game
+        isLevelComplete = getCachesLeft currentLevel == 0
+
+        gameLevel' | isLevelComplete && gameLevel < numLevels = gameLevel + 1
+                   | otherwise = gameLevel
+
+updateLevel :: Level -> Signal -> GameInput -> Level
+updateLevel level@Level{..} signal gameInput = level { levelCaches = levelCaches' }
+  where levelCaches' = map (\cache -> updateCache cache signal gameInput) levelCaches
+
+updateCache :: Cache -> Signal -> GameInput -> Cache
+updateCache cache@Cache{..} Signal{..} gameInput
+  | didSignalFindCache = cache { cacheFound = True }
+  | otherwise = cache
+  where didSignalFindCache = isKeyDown spaceKey gameInput && signalLocation == cacheLocation
 
 updateSignal :: Signal -> GameInput -> Grid -> Signal
 updateSignal signal@Signal{..} gameInput grid
   | signalDelay == 0 = signal
-      { signalPos = signalPos''
+      { signalLocation = signalLocation''
       , signalDelay = 10
       }
   | otherwise = signal { signalDelay = signalDelay - 1 }
-  where (x, y) = signalPos
+  where (x, y) = signalLocation
         (offsetX, offsetY)
           | isKeyDown rightKey gameInput = (1,0)
           | isKeyDown leftKey gameInput = (-1,0)
           | isKeyDown upKey gameInput = (0,1)
           | isKeyDown downKey gameInput = (0,-1)
           | otherwise = (0,0)
-        signalPos' = (x + offsetX, y + offsetY)
-        signalPos'' | isGridCellFree grid signalPos' = signalPos'
-                    | otherwise = signalPos
+        signalLocation' = (x + offsetX, y + offsetY)
+        signalLocation'' | isGridCellFree grid signalLocation' = signalLocation'
+                         | otherwise = signalLocation
+
+updateCompass :: Compass -> Signal -> [Cache] -> Compass
+updateCompass compass@Compass{..} signal caches = compass { compassAngle = compassAngle' }
+  where compassAngle' = (compassAngle + offset) `mod` 360
+        desiredAngle = getAngleFromSignalToNearestCache signal caches
+        offset | compassAngle == desiredAngle = 0
+               | counterClockwiseDist < clockwiseDist = 1
+               | otherwise = -1
+        counterClockwiseDist = (desiredAngle - compassAngle) `mod` 360
+        clockwiseDist = (compassAngle - desiredAngle) `mod` 360
+
+getAngleFromSignalToNearestCache :: Signal -> [Cache] -> Int
+getAngleFromSignalToNearestCache Signal{..} caches = getAngleFromSignalToCache (getNearestCache caches)
+  where
+    getNearestCache = minimumBy (comparing distFromSignalToCache)
+      where dist (x1,y1) (x2,y2) = (x2 - x1)^2 + (y2 - y1)^2
+            distFromSignalToCache cache = dist signalLocation (cacheLocation cache)
+
+    getAngleFromSignalToCache Cache{..} = round $ angle' * 180 / pi
+      where (signalX, signalY) = signalLocation
+            (cacheX, cacheY) = cacheLocation
+            (dx,dy) = (fromIntegral $ cacheX - signalX, fromIntegral $ cacheY - signalY)
+            angle = atan2 dy dx
+            angle' = if angle < 0 then angle + 2*pi else angle
 
 loadPNG :: FilePath -> IO Picture
 loadPNG path = do
@@ -212,23 +350,23 @@ levelColors = cycle
   , makeColorI 197 113 241 255
   ]
 
-data Cell = Wall | Free deriving Eq
+data Cell = Wall | Free deriving (Eq, Show)
 data Grid = Grid
   { gridArray :: Array (Int, Int) Cell
   , gridColor :: Color
-  }
+  } deriving Show
 
 instance Read Cell where
   readsPrec _ ('0':s) = [(Free,s)]
   readsPrec _ ('1':s) = [(Wall,s)]
 
-loadGrids :: IO (Array Int Grid)
+loadGrids :: IO [Grid]
 loadGrids = do
   gridData <- readFile "grids.txt"
   let cellChunks = chunkify (gridTiles ^ 2) (map read $ words gridData)
       gridArrays = map (listArray ((0, 0), (gridTiles - 1, gridTiles - 1))) cellChunks
-      grids = zipWith Grid gridArrays levelColors
-  return $ listArray (1, length grids) grids
+      grids = take numLevels $ cycle $ zipWith Grid gridArrays levelColors
+  return grids
 
 chunkify :: Int -> [a] -> [[a]]
 chunkify i [] = []
