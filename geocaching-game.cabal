@@ -23,6 +23,17 @@ executable geocaching-game-exe
                      , gloss-juicy
                      , random
   default-language:    Haskell2010
+  other-modules:       Cache
+                     , Compass
+                     , Constants
+                     , Game
+                     , GameInput
+                     , Grid
+                     , Image
+                     , Level
+                     , Renderable
+                     , Signal
+                     , Types
 
 source-repository head
   type:     git
