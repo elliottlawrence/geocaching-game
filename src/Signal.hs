@@ -15,19 +15,13 @@ loadSignal = do
     { signalLives = numLives
     , signalPic = signalPic
     , signalLocation = initialSignalLocation
-    , signalDelay = 0
     }
 
 instance Renderable Signal where
   render Signal{..} = renderOnGrid signalLocation signalPic
 
 updateSignal :: Signal -> GameInput -> Grid -> Signal
-updateSignal signal@Signal{..} gameInput grid
-  | signalDelay == 0 = signal
-      { signalLocation = signalLocation''
-      , signalDelay = 10
-      }
-  | otherwise = signal { signalDelay = signalDelay - 1 }
+updateSignal signal@Signal{..} gameInput grid = signal { signalLocation = signalLocation'' }
   where (x, y) = signalLocation
         (offsetX, offsetY)
           | isKeyDown rightKey gameInput = (1,0)

@@ -4,7 +4,7 @@ import           Data.Array
 import           Graphics.Gloss
 import           Graphics.Gloss.Interface.Pure.Game
 
-type GameInput = [(Key, KeyState)]
+type GameInput = [(Key, (KeyState, Int))]
 
 data Cell = Wall | Free deriving (Eq, Show)
 data Grid = Grid
@@ -33,7 +33,6 @@ data Signal = Signal
   { signalLives    :: Int
   , signalPic      :: Picture
   , signalLocation :: (Int, Int)
-  , signalDelay    :: Int
   }
 
 data Game = Game

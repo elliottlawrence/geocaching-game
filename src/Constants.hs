@@ -18,3 +18,6 @@ windowY = gridSize
 
 initialSignalLocation :: (Int, Int)
 initialSignalLocation = (12,12)
+
+signalSpeed :: Int
+signalSpeed = 9

@@ -83,12 +83,15 @@ updateGame _ game@Game{..}
   | otherwise = game
     { signal = signal'
     , compass = compass'
+    , gameInput = gameInput'
     , gameLevels = gameLevels'
     }
   where signal' = updateSignal signal gameInput (getCurrentGrid game)
         compass' = updateCompass compass signal' (getCurrentCaches game)
         gameLevels' = gameLevels // [(gameLevel, updatedLevel)]
         updatedLevel = updateLevel currentLevel signal' gameInput
+
+        gameInput' = updateGameInput gameInput
 
         currentLevel = getCurrentLevel game
         isLevelComplete = getCachesLeft currentLevel == 0
