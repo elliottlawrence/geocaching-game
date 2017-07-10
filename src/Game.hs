@@ -114,7 +114,7 @@ updateGame _ game@Game{..}
   | isJust jumpToLevel = return $ setLevel (fromJust jumpToLevel) game
   | isGameOver game || levelComplete = return game
   | otherwise = do
-    updatedLevel <- updateLevel currentLevel signal' gameInput
+    updatedLevel <- updateLevel currentLevel signal' gameInput didSignalDie
     let gameLevels' = gameLevels // [(gameLevel, updatedLevel)]
     return game
       { signal = signal'

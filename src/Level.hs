@@ -42,9 +42,9 @@ loadLevels = do
                 }) grids allCaches allEnemies levelNames
   return $ listArray (1, numLevels) levels
 
-updateLevel :: Level -> Signal -> GameInput -> IO Level
-updateLevel level@Level{..} signal gameInput = do
-  levelEnemies' <- mapM (updateEnemy levelGrid) levelEnemies
+updateLevel :: Level -> Signal -> GameInput -> Bool -> IO Level
+updateLevel level@Level{..} signal@Signal{..} gameInput didSignalDie = do
+  levelEnemies' <- mapM (updateEnemy didSignalDie signalLives levelGrid) levelEnemies
   let levelCaches' = map (\cache -> updateCache cache signal gameInput) levelCaches
   return level { levelCaches = levelCaches', levelEnemies = levelEnemies' }
 

@@ -26,12 +26,13 @@ getRandomEnemyPics enemyPics numEnemies = do
       randomPics = map (enemyPics !!) randomIndices
   return randomPics
 
-loadEnemies :: [Picture] -> Grid -> Int  -> IO [Enemy]
-loadEnemies enemyPics grid numEnemies = do
-  let padding = 4
-      inner = [padding..gridTiles - 1 - padding]
-      innerCoords = [ (x,y) | x <- inner, y <- inner ]
+innerCoords :: [(Int, Int)]
+innerCoords = [ (x,y) | x <- inner, y <- inner ]
+  where padding = 4
+        inner = [padding..gridTiles - 1 - padding]
 
+loadEnemies :: [Picture] -> Grid -> Int -> IO [Enemy]
+loadEnemies enemyPics grid numEnemies = do
   locations <- getRandomLocations grid numEnemies innerCoords
   randomEnemyPics <- getRandomEnemyPics enemyPics numEnemies
   zipWithM (\location enemyPic -> do
@@ -51,8 +52,14 @@ loadAllEnemies grids numEnemiesPerLevel = do
 instance Renderable Enemy where
   render Enemy{..} = renderOnGrid enemyLocation enemyPic
 
-updateEnemy :: Grid -> Enemy -> IO Enemy
-updateEnemy grid enemy@Enemy{..}
+updateEnemy :: Bool -> Int -> Grid -> Enemy -> IO Enemy
+updateEnemy didSignalDie signalLives grid enemy@Enemy{..}
+  | didSignalDie && signalLives > 0 = do
+    [enemyLocation'] <- getRandomLocations grid 1 innerCoords
+    return enemy
+      { enemyLocation = enemyLocation'
+      , enemyTime = enemyTime + 1
+      }
   | enemyTime `mod` enemySpeed == 0 = do
     enemyDirection' <- getRandomDirection grid enemyLocation enemyDirection
     let enemyLocation' = enemyLocation `addPoints` enemyDirection'

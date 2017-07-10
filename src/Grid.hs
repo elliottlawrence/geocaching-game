@@ -53,9 +53,9 @@ getRandomCoords = do
   return coords
 
 getRandomLocations :: Grid -> Int -> [(Int, Int)] -> IO [(Int, Int)]
-getRandomLocations grid numCaches coordsToExclude = do
+getRandomLocations grid numLocations coordsToExclude = do
   coords <- getRandomCoords
-  let locs = take numCaches $ nub $ filter
+  let locs = take numLocations $ nub $ filter
         (\(x,y) -> isGridCellFree grid (x,y) && (x,y) `notElem` coordsToExclude)
         coords
   return locs

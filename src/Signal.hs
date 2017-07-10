@@ -22,7 +22,7 @@ instance Renderable Signal where
 
 updateSignal :: Signal -> GameInput -> Grid -> [Enemy] -> Signal
 updateSignal signal@Signal{..} gameInput grid enemies
-  | isSignalDead signal enemies = loseLife signal
+  | shouldSignalDie signal enemies = loseLife signal
   | otherwise = signal { signalLocation = signalLocation'' }
   where (x, y) = signalLocation
         (offsetX, offsetY)
@@ -36,8 +36,8 @@ updateSignal signal@Signal{..} gameInput grid enemies
           then signalLocation'
           else signalLocation
 
-isSignalDead :: Signal -> [Enemy] -> Bool
-isSignalDead Signal{..} = any (\Enemy{..} -> signalLocation == enemyLocation)
+shouldSignalDie :: Signal -> [Enemy] -> Bool
+shouldSignalDie Signal{..} = any (\Enemy{..} -> signalLocation == enemyLocation)
 
 loseLife :: Signal -> Signal
 loseLife signal@Signal{..} =
