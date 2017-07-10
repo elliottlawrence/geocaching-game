@@ -3,7 +3,8 @@ module GameInput where
 
 import           Data.Char
 import           Graphics.Gloss
-import           Graphics.Gloss.Interface.Pure.Game
+import           Graphics.Gloss.Interface.IO.Game
+import           System.Exit
 
 import           Constants
 import           Types
@@ -37,10 +38,11 @@ getNumKeyDown gameInput = if null levels then Nothing else Just (head levels)
                    '0' <= c && c <= '9',
                    let levelNum = if c == '0' then 10 else digitToInt c ]
 
-handleInput :: Event -> Game -> Game
-handleInput (EventKey key keyState _ _) game@Game{..} = game {gameInput = gameInput'}
+handleInput :: Event -> Game -> IO Game
+handleInput (EventKey (SpecialKey KeyEsc) _ _ _) _ = exitSuccess
+handleInput (EventKey key keyState _ _) game@Game{..} = return game {gameInput = gameInput'}
   where gameInput' = [ (k,ks') | (k,ks) <- gameInput, let ks' = if k == key then (keyState, 0) else ks ]
-handleInput _ game = game
+handleInput _ game = return game
 
 updateGameInput :: GameInput -> Bool -> GameInput
 updateGameInput gameInput didSignalDie = if didSignalDie

@@ -78,3 +78,20 @@ isGridCellFree :: Grid -> (Int, Int)  -> Bool
 isGridCellFree Grid{..} coord
   | inRange (bounds gridArray) coord = gridArray ! coord == Free
   | otherwise = False
+
+isValidDirection :: Grid -> (Int, Int) -> (Int, Int) -> Bool
+isValidDirection grid location direction =
+  isGridCellFree grid (location `addPoints` direction)
+
+getRandomDirection :: Grid -> (Int, Int) -> (Int, Int) -> IO (Int, Int)
+getRandomDirection grid location (dx,dy)
+  | null validDirections = return (-dx,-dy)
+  | otherwise = do
+    randomIndex <- randomRIO (0, length validDirections - 1)
+    return $ validDirections !! randomIndex
+  where
+    validDirections = filter (isValidDirection grid location) $
+      [(1,0), (-1,0), (0,1), (0,-1)] \\ [(-dx,-dy)]
+
+addPoints :: (Int, Int) -> (Int, Int) -> (Int, Int)
+addPoints (x1, y1) (x2, y2) = (x1 + x2, y1 + y2)

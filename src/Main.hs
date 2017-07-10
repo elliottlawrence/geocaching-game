@@ -1,6 +1,7 @@
 module Main where
 
 import           Graphics.Gloss
+import           Graphics.Gloss.Interface.IO.Game
 
 import           Constants
 import           Game
@@ -16,11 +17,11 @@ main = do
   initialGame <- loadInitialGame
   let display = InWindow "Geocaching Game" (windowX, windowY) (200, 200)
 
-  play
+  playIO
     display
     black   -- background color
     60      -- fps
     initialGame
-    render
+    (return . render)
     handleInput
     updateGame

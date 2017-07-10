@@ -1,7 +1,7 @@
 module Constants where
 
 isDebug :: Bool
-isDebug = True
+isDebug = False
 
 numLevels, numLives :: Int
 numLevels = 10

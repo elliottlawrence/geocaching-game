@@ -37,16 +37,16 @@ data Signal = Signal
   }
 
 data Enemy = Enemy
-  { enemyLocation :: (Int, Int)
-  , enemyPic      :: Picture
+  { enemyLocation  :: (Int, Int)
+  , enemyDirection :: (Int, Int)
+  , enemyPic       :: Picture
+  , enemyTime      :: Int
   } deriving Show
 
 data Game = Game
   { gameInput  :: GameInput
   , gameLevel  :: Int
   , gameLevels :: Array Int Level
-  , gameOver   :: Bool
-  , gameWon    :: Bool
   , signal     :: Signal
   , compass    :: Compass
   }

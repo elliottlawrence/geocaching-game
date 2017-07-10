@@ -25,8 +25,6 @@ loadInitialGame = do
     { gameInput = initialGameInput
     , gameLevel = 1
     , gameLevels = levels
-    , gameOver = False
-    , gameWon = False
     , signal = signal
     , compass = compass
     }
@@ -42,8 +40,11 @@ getCurrentCaches :: Game -> [Cache]
 getCurrentCaches game = levelCaches
   where Level{..} = getCurrentLevel game
 
-getCachesLeft :: Level -> Int
-getCachesLeft Level{..} = length levelCaches - length (filter cacheFound levelCaches)
+isGameWon :: Game -> Bool
+isGameWon game@Game{..} = isLevelComplete (gameLevels ! numLevels)
+
+isGameOver :: Game -> Bool
+isGameOver Game{..} = signalLives signal <= 0
 
 instance Renderable Game where
   render game@Game{..} = applyViewPortToPicture viewPort $ Pictures
@@ -60,28 +61,33 @@ instance Renderable Game where
         , render $ getCurrentCaches game
         , render enemies
         , render signal
-        , getGameOverOrWonOverlay game
+        , getOverlay game
         ]
       enemies = levelEnemies $ getCurrentLevel game
 
-getGameOverOrWonOverlay :: Game -> Picture
-getGameOverOrWonOverlay Game{..}
-  | gameOver || gameWon =
-    Pictures [Color transparentBlue $ rectangle windowX windowY, textPicture]
+getOverlay :: Game -> Picture
+getOverlay game@Game{..}
+  | isGameOver game || levelComplete =
+    Pictures [Color transparentBlue $ rectangle gridSize windowY, textPicture]
   | otherwise = Blank
-  where transparentBlue = makeColorI 0 30 60 130
-        white = makeColorI 255 255 255 255
-        maybeText
-          | gameOver = Just "Game Over"
-          | gameWon = Just "You Won!"
-          | otherwise = Nothing
-        textPicture = maybe
-          Blank
-          (Translate (fromIntegral gridSize / 2 - 80) (fromIntegral windowY / 2 - 10) .
-            Scale 0.2 0.2 .
-            Color white .
-            Text)
-          maybeText
+  where
+    levelComplete = isLevelComplete (getCurrentLevel game)
+
+    transparentBlue = makeColorI 0 30 60 130
+    white = makeColorI 255 255 255 255
+
+    maybeText
+      | isGameOver game = Just "Game Over"
+      | isGameWon game = Just "You Won!"
+      | levelComplete = Just "Level Complete!"
+      | otherwise = Nothing
+    textPicture = maybe
+      Blank
+      (Translate (fromIntegral gridSize / 2 - 80) (fromIntegral windowY / 2 - 10) .
+        Scale 0.2 0.2 .
+        Color white .
+        Text)
+      maybeText
 
 getGutterArea :: Game -> Picture
 getGutterArea game@Game{..} =
@@ -102,33 +108,32 @@ getGutterArea game@Game{..} =
     level@Level{..} = getCurrentLevel game
     cachesLeft = getCachesLeft level
 
-updateGame :: Float -> Game -> Game
+updateGame :: Float -> Game -> IO Game
 updateGame _ game@Game{..}
-  | gameOver || gameWon = game
-  | isJust jumpToLevel = setLevel (fromJust jumpToLevel) game
-  | otherwise = game
-    { signal = signal'
-    , compass = compass'
-    , gameInput = gameInput'
-    , gameLevels = gameLevels'
-    , gameWon = gameWon'
-    , gameOver = signalLives signal' <= 0
-    }
+  | (isGameOver game || isGameWon game) && isEnterDown = loadInitialGame
+  | isJust jumpToLevel = return $ setLevel (fromJust jumpToLevel) game
+  | isGameOver game || levelComplete = return game
+  | otherwise = do
+    updatedLevel <- updateLevel currentLevel signal' gameInput
+    let gameLevels' = gameLevels // [(gameLevel, updatedLevel)]
+    return game
+      { signal = signal'
+      , compass = compass'
+      , gameInput = gameInput'
+      , gameLevels = gameLevels'
+      }
   where
+    currentLevel = getCurrentLevel game
     enemies = levelEnemies currentLevel
     signal' = updateSignal signal gameInput (getCurrentGrid game) enemies
     compass' = updateCompass compass signal' (getCurrentCaches game)
-    gameLevels' = gameLevels // [(gameLevel, updatedLevel)]
-    updatedLevel = updateLevel currentLevel signal' gameInput
 
     didSignalDie = signalLives signal' < signalLives signal
     gameInput' = updateGameInput gameInput didSignalDie
 
-    currentLevel = getCurrentLevel game
-    isLevelComplete = getCachesLeft currentLevel == 0
-    shouldProgressLevels = isLevelComplete && gameLevel < numLevels &&
-      isKeyDown enterKey gameInput
-    gameWon' = isLevelComplete && gameLevel == numLevels
+    isEnterDown = isKeyDown enterKey gameInput
+    levelComplete = isLevelComplete currentLevel
+    shouldProgressLevels = levelComplete && gameLevel < numLevels && isEnterDown
 
     numKeyDown = getNumKeyDown gameInput
     jumpToLevel

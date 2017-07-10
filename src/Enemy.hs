@@ -34,11 +34,14 @@ loadEnemies enemyPics grid numEnemies = do
 
   locations <- getRandomLocations grid numEnemies innerCoords
   randomEnemyPics <- getRandomEnemyPics enemyPics numEnemies
-  let enemies = zipWith (\location enemyPic -> Enemy
-                { enemyLocation = location
-                , enemyPic = enemyPic
-                }) locations randomEnemyPics
-  return enemies
+  zipWithM (\location enemyPic -> do
+    direction <- getRandomDirection grid location (0,0)
+    return Enemy
+      { enemyLocation = location
+      , enemyDirection = direction
+      , enemyPic = enemyPic
+      , enemyTime = 0
+      }) locations randomEnemyPics
 
 loadAllEnemies :: [Grid] -> [Int] -> IO [[Enemy]]
 loadAllEnemies grids numEnemiesPerLevel = do
@@ -47,3 +50,16 @@ loadAllEnemies grids numEnemiesPerLevel = do
 
 instance Renderable Enemy where
   render Enemy{..} = renderOnGrid enemyLocation enemyPic
+
+updateEnemy :: Grid -> Enemy -> IO Enemy
+updateEnemy grid enemy@Enemy{..}
+  | enemyTime `mod` enemySpeed == 0 = do
+    enemyDirection' <- getRandomDirection grid enemyLocation enemyDirection
+    let enemyLocation' = enemyLocation `addPoints` enemyDirection'
+    return enemy
+      { enemyDirection = enemyDirection'
+      , enemyLocation = enemyLocation'
+      , enemyTime = enemyTime + 1
+      }
+  | otherwise = return enemy { enemyTime = enemyTime + 1 }
+  where enemySpeed = 20
