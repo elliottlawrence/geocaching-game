@@ -45,6 +45,8 @@ data Game = Game
   { gameInput  :: GameInput
   , gameLevel  :: Int
   , gameLevels :: Array Int Level
+  , gameOver   :: Bool
+  , gameWon    :: Bool
   , signal     :: Signal
   , compass    :: Compass
   }

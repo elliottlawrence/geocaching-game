@@ -9,6 +9,7 @@ import           System.Random
 import           Constants
 import           Renderable
 import           Types
+import           Utils
 
 instance Read Cell where
   readsPrec _ ('0':s) = [(Free,s)]
@@ -68,10 +69,6 @@ instance Renderable Grid where
               Free -> Color gridColor) $
             rectangle tileSize tileSize)
             (assocs gridArray)
-
-rectangle :: Int -> Int -> Picture
-rectangle w h = Polygon [(0, 0), (w', 0), (w', h'), (0, h')]
-  where [w', h'] = map fromIntegral [w, h]
 
 renderOnGrid :: (Int, Int) -> Picture ->  Picture
 renderOnGrid (x, y) = Translate x' y'

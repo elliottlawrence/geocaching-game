@@ -42,5 +42,7 @@ handleInput (EventKey key keyState _ _) game@Game{..} = game {gameInput = gameIn
   where gameInput' = [ (k,ks') | (k,ks) <- gameInput, let ks' = if k == key then (keyState, 0) else ks ]
 handleInput _ game = game
 
-updateGameInput :: GameInput -> GameInput
-updateGameInput gameInput = [ (k, (ks, time + 1)) | (k, (ks, time)) <- gameInput ]
+updateGameInput :: GameInput -> Bool -> GameInput
+updateGameInput gameInput didSignalDie = if didSignalDie
+  then initialGameInput
+  else [ (k, (ks, time + 1)) | (k, (ks, time)) <- gameInput ]
