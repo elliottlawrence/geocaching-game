@@ -40,7 +40,7 @@ getCurrentCaches game = levelCaches
   where Level{..} = getCurrentLevel game
 
 getCachesLeft :: Level -> Int
-getCachesLeft Level{..} = numCachesPerLevel - length (filter cacheFound levelCaches)
+getCachesLeft Level{..} = length levelCaches - length (filter cacheFound levelCaches)
 
 instance Renderable Game where
   render game@Game{..} = applyViewPortToPicture viewPort $ Pictures
@@ -51,12 +51,14 @@ instance Renderable Game where
     where gridArea = Pictures
             [ render $ getCurrentGrid game
             , render $ getCurrentCaches game
+            , render enemies
             , render signal
             ]
           gutterArea = getGutterArea game
           viewPort = viewPortInit {
             viewPortTranslate = (-fromIntegral windowX/2, -fromIntegral windowY/2)
           }
+          enemies = levelEnemies $ getCurrentLevel game
 
 getGutterArea :: Game -> Picture
 getGutterArea game@Game{..} =

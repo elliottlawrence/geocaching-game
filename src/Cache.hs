@@ -10,11 +10,22 @@ import           Grid
 import           Image
 import           Renderable
 import           Types
+import           Utils
 
-loadCachePics :: IO (Array Int Picture)
-loadCachePics = do
-  pics <- mapM (\i -> loadPNG ("images/level" ++ show i ++ ".png")) [1..numLevels]
-  return $ listArray (1, numLevels) pics
+loadCaches :: Grid -> Picture -> Int -> IO [Cache]
+loadCaches grid cachePic numCaches = do
+  locations <- getRandomLocations grid numCaches [initialSignalLocation]
+  let caches = map (\location -> Cache
+                { cacheLocation = location
+                , cacheFound = False
+                , cachePic = cachePic
+                }) locations
+  return caches
+
+loadAllCaches :: [Grid] -> [Int] -> IO [[Cache]]
+loadAllCaches grids numCachesPerLevel = do
+  cachePics <- mapM (\i -> loadPNG ("images/level" ++ show i ++ ".png")) [1..numLevels]
+  zipWith3M loadCaches grids cachePics numCachesPerLevel
 
 instance Renderable Cache where
   render Cache{..} = renderOnGrid cacheLocation pic

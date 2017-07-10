@@ -26,8 +26,8 @@ updateSignal signal@Signal{..} gameInput grid = signal { signalLocation = signal
         (offsetX, offsetY)
           | isKeyDown rightKey gameInput = (1,0)
           | isKeyDown leftKey gameInput = (-1,0)
-          | isKeyDown upKey gameInput = (0,1)
-          | isKeyDown downKey gameInput = (0,-1)
+          | isKeyDown upKey gameInput = (0,-1)
+          | isKeyDown downKey gameInput = (0,1)
           | otherwise = (0,0)
         signalLocation' = (x + offsetX, y + offsetY)
         signalLocation'' | isGridCellFree grid signalLocation' = signalLocation'

@@ -1,10 +1,9 @@
 module Constants where
 
 isDebug :: Bool
-isDebug = False
+isDebug = True
 
-numCachesPerLevel, numLevels, numLives :: Int
-numCachesPerLevel = 3
+numLevels, numLives :: Int
 numLevels = 10
 numLives = 5
 

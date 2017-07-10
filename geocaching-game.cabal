@@ -26,6 +26,7 @@ executable geocaching-game-exe
   other-modules:       Cache
                      , Compass
                      , Constants
+                     , Enemy
                      , Game
                      , GameInput
                      , Grid
@@ -34,6 +35,7 @@ executable geocaching-game-exe
                      , Renderable
                      , Signal
                      , Types
+                     , Utils
 
 source-repository head
   type:     git

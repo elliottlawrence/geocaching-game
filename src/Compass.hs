@@ -45,6 +45,6 @@ getAngleFromSignalToNearestCache Signal{..} caches = getAngleFromSignalToCache (
     getAngleFromSignalToCache Cache{..} = round $ angle' * 180 / pi
       where (signalX, signalY) = signalLocation
             (cacheX, cacheY) = cacheLocation
-            (dx,dy) = (fromIntegral $ cacheX - signalX, fromIntegral $ cacheY - signalY)
+            (dx,dy) = (fromIntegral $ cacheX - signalX, fromIntegral $ signalY - cacheY)
             angle = atan2 dy dx
             angle' = if angle < 0 then angle + 2*pi else angle

@@ -19,9 +19,10 @@ data Cache = Cache
   } deriving Show
 
 data Level = Level
-  { levelGrid   :: Grid
-  , levelCaches :: [Cache]
-  , levelName   :: String
+  { levelGrid    :: Grid
+  , levelCaches  :: [Cache]
+  , levelName    :: String
+  , levelEnemies :: [Enemy]
   } deriving Show
 
 data Compass = Compass
@@ -34,6 +35,11 @@ data Signal = Signal
   , signalPic      :: Picture
   , signalLocation :: (Int, Int)
   }
+
+data Enemy = Enemy
+  { enemyLocation :: (Int, Int)
+  , enemyPic      :: Picture
+  } deriving Show
 
 data Game = Game
   { gameInput  :: GameInput
