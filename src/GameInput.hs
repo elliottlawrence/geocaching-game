@@ -2,7 +2,6 @@
 module GameInput where
 
 import           Data.Char
-import           Graphics.Gloss
 import           Graphics.Gloss.Interface.IO.Game
 import           System.Exit
 

@@ -1,7 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
 module Cache where
 
-import           Data.Array
 import           Graphics.Gloss
 
 import           Constants

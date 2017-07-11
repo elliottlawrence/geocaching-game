@@ -14,6 +14,7 @@ import           Utils
 instance Read Cell where
   readsPrec _ ('0':s) = [(Free,s)]
   readsPrec _ ('1':s) = [(Wall,s)]
+  readsPrec _ _ = error "Invalid grid"
 
 wallColor :: Color
 wallColor = makeColorI 96 96 96 255
@@ -30,7 +31,7 @@ gridColors =
 loadGrids :: IO [Grid]
 loadGrids = do
   gridData <- readFile "grids.txt"
-  let cellChunks = chunkify (gridTiles ^ 2) (map read $ words gridData)
+  let cellChunks = chunkify (gridTiles ^ (2 :: Int)) (map read $ words gridData)
       grids = take numLevels $ cycle $ zipWith loadGrid cellChunks gridColors
   return grids
 
@@ -42,7 +43,7 @@ loadGrid cells = Grid gridArray
       [ ((c,r), cell) | ((r,c), cell) <- zip (range gridBounds) cells ]
 
 chunkify :: Int -> [a] -> [[a]]
-chunkify i [] = []
+chunkify _ [] = []
 chunkify i xs = first : chunkify i rest
   where (first, rest) = splitAt i xs
 

@@ -7,6 +7,6 @@ loadPNG :: FilePath -> IO Picture
 loadPNG path = do
   png <- loadJuicyPNG path
   case png of
-    Just bitmap@(Bitmap w h _ _) -> return $
-      Translate (fromIntegral w/2) (fromIntegral h/2) bitmap
-    Nothing -> ioError $ userError $ "File not found: " ++ path
+    Just bmp@(Bitmap w h _ _) -> return $
+      Translate (fromIntegral w/2) (fromIntegral h/2) bmp
+    _ -> ioError $ userError $ "File not found: " ++ path

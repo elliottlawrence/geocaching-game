@@ -10,7 +10,6 @@ import           Grid
 import           Image
 import           Renderable
 import           Types
-import           Utils
 
 loadEnemyPics :: IO [Picture]
 loadEnemyPics = do

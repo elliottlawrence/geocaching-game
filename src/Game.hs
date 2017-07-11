@@ -3,7 +3,7 @@ module Game where
 
 import           Data.Array
 import           Data.Maybe
-import           Graphics.Gloss
+import           Graphics.Gloss               hiding (orange, white)
 import           Graphics.Gloss.Data.ViewPort
 
 import           Compass
@@ -41,7 +41,7 @@ getCurrentCaches game = levelCaches
   where Level{..} = getCurrentLevel game
 
 isGameWon :: Game -> Bool
-isGameWon game@Game{..} = isLevelComplete (gameLevels ! numLevels)
+isGameWon Game{..} = isLevelComplete (gameLevels ! numLevels)
 
 isGameOver :: Game -> Bool
 isGameOver Game{..} = signalLives signal <= 0

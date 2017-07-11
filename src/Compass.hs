@@ -39,10 +39,10 @@ getAngleFromSignalToNearestCache :: Signal -> [Cache] -> Int
 getAngleFromSignalToNearestCache Signal{..} caches = getAngleFromSignalToCache (getNearestCache caches)
   where
     getNearestCache = minimumBy (comparing distFromSignalToCache)
-      where dist (x1,y1) (x2,y2) = (x2 - x1)^2 + (y2 - y1)^2
+      where dist (x1,y1) (x2,y2) = (x2 - x1)^(2 :: Int) + (y2 - y1)^(2 :: Int)
             distFromSignalToCache cache = dist signalLocation (cacheLocation cache)
 
-    getAngleFromSignalToCache Cache{..} = round $ angle' * 180 / pi
+    getAngleFromSignalToCache Cache{..} = round $ angle' * 180 / (pi :: Double)
       where (signalX, signalY) = signalLocation
             (cacheX, cacheY) = cacheLocation
             (dx,dy) = (fromIntegral $ cacheX - signalX, fromIntegral $ signalY - cacheY)
