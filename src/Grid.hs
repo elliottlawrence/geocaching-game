@@ -1,6 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 module Grid where
 
+import           Control.Monad.State
 import           Data.Array
 import           Data.List
 import           Graphics.Gloss
@@ -47,20 +48,6 @@ chunkify _ [] = []
 chunkify i xs = first : chunkify i rest
   where (first, rest) = splitAt i xs
 
-getRandomCoords :: IO [(Int, Int)]
-getRandomCoords = do
-  g <- newStdGen
-  let coords = map (\[x,y] -> (x,y)) $ chunkify 2 $ randomRs (0, gridTiles - 1) g
-  return coords
-
-getRandomLocations :: Grid -> Int -> [(Int, Int)] -> IO [(Int, Int)]
-getRandomLocations grid numLocations coordsToExclude = do
-  coords <- getRandomCoords
-  let locs = take numLocations $ nub $ filter
-        (\(x,y) -> isGridCellFree grid (x,y) && (x,y) `notElem` coordsToExclude)
-        coords
-  return locs
-
 instance Renderable Grid where
   render Grid{..} = Pictures cells
     where cells = map (\((x,y), cell) ->
@@ -84,15 +71,27 @@ isValidDirection :: Grid -> (Int, Int) -> (Int, Int) -> Bool
 isValidDirection grid location direction =
   isGridCellFree grid (location `addPoints` direction)
 
-getRandomDirection :: Grid -> (Int, Int) -> (Int, Int) -> IO (Int, Int)
+addPoints :: (Int, Int) -> (Int, Int) -> (Int, Int)
+addPoints (x1, y1) (x2, y2) = (x1 + x2, y1 + y2)
+
+getRandomDirection :: Grid -> (Int, Int) -> (Int, Int) -> RandomT (Int, Int)
 getRandomDirection grid location (dx,dy)
   | null validDirections = return (-dx,-dy)
   | otherwise = do
-    randomIndex <- randomRIO (0, length validDirections - 1)
+    randomIndex <- state $ randomR (0, length validDirections - 1)
     return $ validDirections !! randomIndex
   where
     validDirections = filter (isValidDirection grid location) $
       [(1,0), (-1,0), (0,1), (0,-1)] \\ [(-dx,-dy)]
 
-addPoints :: (Int, Int) -> (Int, Int) -> (Int, Int)
-addPoints (x1, y1) (x2, y2) = (x1 + x2, y1 + y2)
+getRandomCoords :: RandomT [(Int, Int)]
+getRandomCoords = makeRandomT $
+  map (\[x,y] -> (x,y)) . chunkify 2 . randomRs (0, gridTiles - 1)
+
+getRandomLocations :: Grid -> Int -> [(Int, Int)] -> RandomT [(Int, Int)]
+getRandomLocations grid numLocations coordsToExclude = do
+  coords <- getRandomCoords
+  let locs = take numLocations $ nub $ filter
+        (\(x,y) -> isGridCellFree grid (x,y) && (x,y) `notElem` coordsToExclude)
+        coords
+  return locs

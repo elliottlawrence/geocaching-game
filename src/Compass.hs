@@ -5,17 +5,14 @@ import           Data.List
 import           Data.Ord       (comparing)
 import           Graphics.Gloss
 
-import           Image
 import           Renderable
 import           Types
 
-loadCompass :: Signal -> [Cache] -> IO Compass
-loadCompass signal caches = do
-  compassPic <- loadPNG "images/compass.png"
-  return Compass
-    { compassPic = compassPic
-    , compassAngle = getAngleFromSignalToNearestCache signal caches
-    }
+loadCompass :: GetPic -> Signal -> [Cache] -> Compass
+loadCompass getPic signal caches = Compass
+  { compassPic = getPic CompassPic
+  , compassAngle = getAngleFromSignalToNearestCache signal caches
+  }
 
 instance Renderable Compass where
   render Compass{..} = Pictures [compassPic, needle]

@@ -11,19 +11,19 @@ import           Renderable
 import           Types
 import           Utils
 
-loadCaches :: Grid -> Int -> Int -> IO [Cache]
-loadCaches grid levelNum numCaches = do
+loadCaches :: GetPic -> Grid -> Int -> Int -> RandomT [Cache]
+loadCaches getPic grid levelNum numCaches = do
   locations <- getRandomLocations grid numCaches [initialSignalLocation]
-  cachePic <- loadPNG $ "images/level" ++ show levelNum ++ ".png"
-  let caches = map (\location -> Cache
+  let cachePic = getPic (getPicNameForLevel levelNum)
+      caches = map (\location -> Cache
                 { cacheLocation = location
                 , cacheFound = False
                 , cachePic = cachePic
                 }) locations
   return caches
 
-loadAllCaches :: [Grid] -> [Int] -> IO [[Cache]]
-loadAllCaches grids = zipWith3M loadCaches grids [1..]
+loadAllCaches :: GetPic -> [Grid] -> [Int] -> RandomT [[Cache]]
+loadAllCaches getPic grids = zipWith3M (loadCaches getPic) grids [1..]
 
 instance Renderable Cache where
   render Cache{..} = renderOnGrid cacheLocation pic
@@ -31,8 +31,8 @@ instance Renderable Cache where
               | isDebug = Color red $ rectangle tileSize tileSize
               | otherwise = Blank
 
-updateCache :: Cache -> Signal -> GameInput -> Cache
-updateCache cache@Cache{..} Signal{..} gameInput
+updateCache :: Signal -> GameInput -> Cache -> Cache
+updateCache Signal{..} gameInput cache@Cache{..}
   | didSignalFindCache = cache { cacheFound = True }
   | otherwise = cache
   where didSignalFindCache = isKeyDown spaceKey gameInput && signalLocation == cacheLocation

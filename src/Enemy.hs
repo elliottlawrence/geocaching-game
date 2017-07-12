@@ -7,33 +7,25 @@ import           System.Random
 
 import           Constants
 import           Grid
-import           Image
 import           Renderable
 import           Types
+import           Utils
 
-loadEnemyPics :: IO [Picture]
-loadEnemyPics = do
-  cactus <- loadPNG "images/cactus.png"
-  spider <- loadPNG "images/spider.png"
-  policeman <- loadPNG "images/policeman.png"
-  return [cactus, spider, policeman]
-
-getRandomEnemyPics :: [Picture] -> Int -> IO [Picture]
-getRandomEnemyPics enemyPics numEnemies = do
-  g <- newStdGen
-  let randomIndices = take numEnemies $ randomRs (0, length enemyPics - 1) g
-      randomPics = map (enemyPics !!) randomIndices
-  return randomPics
+getRandomEnemyPics :: [Picture] -> Int -> RandomT [Picture]
+getRandomEnemyPics enemyPics numEnemies = makeRandomT $
+  map (enemyPics !!) . take numEnemies . randomRs (0, length enemyPics - 1)
 
 innerCoords :: [(Int, Int)]
 innerCoords = [ (x,y) | x <- inner, y <- inner ]
   where padding = 4
         inner = [padding..gridTiles - 1 - padding]
 
-loadEnemies :: [Picture] -> Grid -> Int -> IO [Enemy]
-loadEnemies enemyPics grid numEnemies = do
-  locations <- getRandomLocations grid numEnemies innerCoords
+loadEnemies :: GetPic -> Grid -> Int -> RandomT [Enemy]
+loadEnemies getPic grid numEnemies = do
+  let enemyPics = map getPic [CactusPic, SpiderPic, PolicemanPic]
   randomEnemyPics <- getRandomEnemyPics enemyPics numEnemies
+  locations <- getRandomLocations grid numEnemies innerCoords
+
   zipWithM (\location enemyPic -> do
     direction <- getRandomDirection grid location (0,0)
     return Enemy
@@ -43,15 +35,13 @@ loadEnemies enemyPics grid numEnemies = do
       , enemyTime = 0
       }) locations randomEnemyPics
 
-loadAllEnemies :: [Grid] -> [Int] -> IO [[Enemy]]
-loadAllEnemies grids numEnemiesPerLevel = do
-  enemyPics <- loadEnemyPics
-  zipWithM (loadEnemies enemyPics) grids numEnemiesPerLevel
+loadAllEnemies :: GetPic -> [Grid] -> [Int] -> RandomT [[Enemy]]
+loadAllEnemies getPic = zipWithM (loadEnemies getPic)
 
 instance Renderable Enemy where
   render Enemy{..} = renderOnGrid enemyLocation enemyPic
 
-updateEnemy :: Bool -> Int -> Grid -> Enemy -> IO Enemy
+updateEnemy :: Bool -> Int -> Grid -> Enemy -> RandomT Enemy
 updateEnemy didSignalDie signalLives grid enemy@Enemy{..}
   | didSignalDie && signalLives > 0 = do
     [enemyLocation'] <- getRandomLocations grid 1 innerCoords

@@ -1,6 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 module Game where
 
+import           Control.Monad.State
 import           Data.Array
 import           Data.Maybe
 import           Graphics.Gloss               hiding (orange, white)
@@ -15,16 +16,21 @@ import           Signal
 import           Types
 import           Utils
 
-loadInitialGame :: IO Game
-loadInitialGame = do
-  signal <- loadSignal
-  levels <- loadLevels
-  let initialCaches = levelCaches (levels ! 1)
-  compass <- loadCompass signal initialCaches
+loadInitialGame :: GetPic -> [Grid] -> RandomT Game
+loadInitialGame getPic grids = do
+  levels <- loadLevels getPic grids
+  let signal = loadSignal getPic
+      initialCaches = levelCaches (levels ! 1)
+      compass = loadCompass getPic signal initialCaches
+  g <- get
+
   return Game
     { gameInput = initialGameInput
     , gameLevel = 1
     , gameLevels = levels
+    , gameGetPic = getPic
+    , gameGrids = grids
+    , gameRandomGen = g
     , signal = signal
     , compass = compass
     }
@@ -33,8 +39,7 @@ getCurrentLevel :: Game -> Level
 getCurrentLevel Game{..} = gameLevels ! gameLevel
 
 getCurrentGrid :: Game -> Grid
-getCurrentGrid game = levelGrid
-    where Level{..} = getCurrentLevel game
+getCurrentGrid Game{..} = gameGrids !! (gameLevel - 1)
 
 getCurrentCaches :: Game -> [Cache]
 getCurrentCaches game = levelCaches
@@ -108,14 +113,20 @@ getGutterArea game@Game{..} =
     level@Level{..} = getCurrentLevel game
     cachesLeft = getCachesLeft level
 
-updateGame :: Float -> Game -> IO Game
-updateGame _ game@Game{..}
-  | (isGameOver game || isGameWon game) && isEnterDown = loadInitialGame
+updateGame :: Float -> Game -> Game
+updateGame _ game@Game{..} = game' { gameRandomGen = g' }
+  where (game', g') = runState (updateGame' game) gameRandomGen
+
+updateGame' :: Game -> RandomT Game
+updateGame' game@Game{..}
+  | (isGameOver game || isGameWon game) && isEnterDown gameInput =
+    loadInitialGame gameGetPic gameGrids
   | isJust jumpToLevel = return $ setLevel (fromJust jumpToLevel) game
   | isGameOver game || levelComplete = return game
   | otherwise = do
-    updatedLevel <- updateLevel currentLevel signal' gameInput didSignalDie
+    updatedLevel <- updateLevel currentLevel signal' grid gameInput didSignalDie
     let gameLevels' = gameLevels // [(gameLevel, updatedLevel)]
+
     return game
       { signal = signal'
       , compass = compass'
@@ -125,15 +136,17 @@ updateGame _ game@Game{..}
   where
     currentLevel = getCurrentLevel game
     enemies = levelEnemies currentLevel
-    signal' = updateSignal signal gameInput (getCurrentGrid game) enemies
+    grid = getCurrentGrid game
+
+    signal' = updateSignal signal gameInput grid enemies
     compass' = updateCompass compass signal' (getCurrentCaches game)
 
     didSignalDie = signalLives signal' < signalLives signal
     gameInput' = updateGameInput gameInput didSignalDie
 
-    isEnterDown = isKeyDown enterKey gameInput
     levelComplete = isLevelComplete currentLevel
-    shouldProgressLevels = levelComplete && gameLevel < numLevels && isEnterDown
+    shouldProgressLevels =
+      levelComplete && gameLevel < numLevels && isEnterDown gameInput
 
     numKeyDown = getNumKeyDown gameInput
     jumpToLevel

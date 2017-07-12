@@ -4,18 +4,15 @@ module Signal where
 import           Constants
 import           GameInput
 import           Grid
-import           Image
 import           Renderable
 import           Types
 
-loadSignal :: IO Signal
-loadSignal = do
-  signalPic <- loadPNG "images/signal.png"
-  return Signal
-    { signalLives = numLives
-    , signalPic = signalPic
-    , signalLocation = initialSignalLocation
-    }
+loadSignal :: GetPic -> Signal
+loadSignal getPic = Signal
+  { signalLives = numLives
+  , signalPic = getPic SignalPic
+  , signalLocation = initialSignalLocation
+  }
 
 instance Renderable Signal where
   render Signal{..} = renderOnGrid signalLocation signalPic

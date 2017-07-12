@@ -1,8 +1,10 @@
 module Types where
 
+import           Control.Monad.State
 import           Data.Array
 import           Graphics.Gloss
 import           Graphics.Gloss.Interface.Pure.Game
+import           System.Random
 
 type GameInput = [(Key, (KeyState, Int))]
 
@@ -19,8 +21,7 @@ data Cache = Cache
   } deriving Show
 
 data Level = Level
-  { levelGrid    :: Grid
-  , levelCaches  :: [Cache]
+  { levelCaches  :: [Cache]
   , levelName    :: String
   , levelEnemies :: [Enemy]
   } deriving Show
@@ -44,9 +45,34 @@ data Enemy = Enemy
   } deriving Show
 
 data Game = Game
-  { gameInput  :: GameInput
-  , gameLevel  :: Int
-  , gameLevels :: Array Int Level
-  , signal     :: Signal
-  , compass    :: Compass
+  { gameInput     :: GameInput
+  , gameLevel     :: Int
+  , gameLevels    :: Array Int Level
+  , gameGetPic    :: GetPic
+  , gameGrids     :: [Grid]
+  , gameRandomGen :: StdGen
+  , signal        :: Signal
+  , compass       :: Compass
   }
+
+data PictureName
+  = Level1Pic
+  | Level2Pic
+  | Level3Pic
+  | Level4Pic
+  | Level5Pic
+  | Level6Pic
+  | Level7Pic
+  | Level8Pic
+  | Level9Pic
+  | Level10Pic
+  | SignalPic
+  | CompassPic
+  | CactusPic
+  | SpiderPic
+  | PolicemanPic
+  deriving (Eq, Enum, Show)
+
+type GetPic = PictureName -> Picture
+
+type RandomT a = State StdGen a
