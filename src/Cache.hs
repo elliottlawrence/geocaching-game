@@ -28,7 +28,7 @@ loadAllCaches getPic grids = zipWith3M (loadCaches getPic) grids [1..]
 instance Renderable Cache where
   render Cache{..} = renderOnGrid cacheLocation pic
     where pic | cacheFound = cachePic
-              | isDebug = Color red $ rectangle tileSize tileSize
+              -- | isDebug = Color red $ rectangle tileSize tileSize
               | otherwise = Blank
 
 updateCache :: Signal -> GameInput -> Cache -> Cache

@@ -22,13 +22,16 @@ wallColor = makeColorI 96 96 96 255
 
 gridColors :: [Color]
 gridColors = cycle
-  [ makeColorI 161 212 131 255
-  , makeColorI 117 167 218 255
-  , makeColorI 243 189 146 255
-  , makeColorI 247 246 144 255
-  , makeColorI 197 113 241 255
-  , makeColorI 255 145 152 255
-  , makeColorI 134 255 239 255
+  [ makeColorI 210 250 139 255
+  , makeColorI 250 169 140 255
+  , makeColorI 114 175 250 255
+  , makeColorI 250 247 115 255
+  , makeColorI 147 141 250 255
+  , makeColorI 250 208 131 255
+  , makeColorI 139 250 248 255
+  , makeColorI 250 148 197 255
+  , makeColorI 224 152 250 255
+  , makeColorI 158 250 149 255
   ]
 
 loadGrids :: IO [Grid]
