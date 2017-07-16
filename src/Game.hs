@@ -73,7 +73,10 @@ instance Renderable Game where
 getOverlay :: Game -> Picture
 getOverlay game@Game{..}
   | isGameOver game || levelComplete =
-    Pictures [Color transparentBlue $ rectangle gridSize windowY, textPicture]
+    Pictures
+      [ Color transparentBlue $ rectangle (fromIntegral gridSize) (fromIntegral windowY)
+      , textPicture
+      ]
   | otherwise = Blank
   where
     levelComplete = isLevelComplete (getCurrentLevel game)

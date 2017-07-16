@@ -53,15 +53,47 @@ chunkify _ [] = []
 chunkify i xs = first : chunkify i rest
   where (first, rest) = splitAt i xs
 
+tileSize' :: Float
+tileSize' = fromIntegral tileSize
+
 instance Renderable Grid where
-  render Grid{..} = Pictures cells
+  render grid@Grid{..} = Pictures cells
     where cells = map (\((x,y), cell) ->
-            renderOnGrid (x,y) $
+            renderOnGrid (x,y)
             (case cell of
-              Wall -> Color wallColor
-              Free -> Color gridColor) $
-            rectangle tileSize tileSize)
+              Wall -> renderWallCell (x,y) grid
+              Free -> renderFreeCell grid))
             (assocs gridArray)
+
+renderFreeCell :: Grid -> Picture
+renderFreeCell Grid{..} = Color gridColor $ rectangle tileSize' tileSize'
+
+data Corner = TL | TR | BL | BR
+
+renderWallCell :: (Int, Int) -> Grid -> Picture
+renderWallCell (x,y) grid@Grid{..} = Pictures
+  [ renderFreeCell grid
+  , Color wallColor $ Pictures $
+    Translate halfTile halfTile (circleSolid halfTile) :
+    corners
+  ]
+  where
+    halfTile = tileSize' / 2
+    quarterWall = rectangle halfTile halfTile
+
+    renderCorner TL = quarterWall
+    renderCorner TR = Translate halfTile 0 quarterWall
+    renderCorner BL = Translate 0 halfTile quarterWall
+    renderCorner BR = Translate halfTile halfTile quarterWall
+
+    getAdjacentCells TL = [(x-1, y), (x, y+1)]
+    getAdjacentCells TR = [(x+1, y), (x, y+1)]
+    getAdjacentCells BL = [(x-1, y), (x, y-1)]
+    getAdjacentCells BR = [(x, y-1), (x+1, y)]
+
+    hasCorner corner = any (not . isGridCellFree grid) (getAdjacentCells corner)
+    corners = [ renderCorner corner | corner <- [TL, TR, BL, BR], hasCorner corner ]
+
 
 renderOnGrid :: (Int, Int) -> Picture ->  Picture
 renderOnGrid (x, y) = Translate x' y'
