@@ -6,4 +6,4 @@ extra-deps:
 - gloss-1.11.1.1
 - gloss-juicy-0.2.2
 - gloss-rendering-1.11.1.1
-resolver: lts-6.25
+resolver: lts-8.23
