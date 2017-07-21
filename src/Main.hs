@@ -1,4 +1,12 @@
+{-# LANGUAGE CPP #-}
 module Main where
+
+#ifdef __GHCJS__
+
+main :: IO ()
+main = print "JavaScript port coming soon!"
+
+#else
 
 import           Graphics.Gloss
 
@@ -26,3 +34,5 @@ main = do
     render
     handleInput
     updateGame
+
+#endif

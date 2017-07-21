@@ -1,0 +1,41 @@
+name:                geocaching-game
+version:             0.1.0.0
+-- synopsis:
+-- description:
+homepage:            https://github.com/elliottlawrence/geocaching-game#readme
+license:             BSD3
+author:              Elliott Lawrence
+maintainer:          elliottlawrence7@gmail.com
+copyright:           2017 Elliott Lawrence
+category:            Games
+build-type:          Simple
+cabal-version:       >=1.10
+
+executable geocaching-game-exe
+  hs-source-dirs:      src
+  main-is:             Main.hs
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N -Wall -fno-warn-orphans
+  build-depends:       base
+                     , array
+                     , gloss
+                     , gloss-juicy
+                     , mtl
+                     , random
+  default-language:    Haskell2010
+  other-modules:       Cache
+                     , Compass
+                     , Constants
+                     , Enemy
+                     , Game
+                     , GameInput
+                     , Grid
+                     , Image
+                     , Level
+                     , Renderable
+                     , Signal
+                     , Types
+                     , Utils
+
+source-repository head
+  type:     git
+  location: https://github.com/elliottlawrence/geocaching-game
