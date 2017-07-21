@@ -21,7 +21,7 @@ wallColor :: Color
 wallColor = makeColorI 96 96 96 255
 
 gridColors :: [Color]
-gridColors = cycle
+gridColors =
   [ makeColorI 210 250 139 255
   , makeColorI 250 169 140 255
   , makeColorI 114 175 250 255
@@ -31,7 +31,7 @@ gridColors = cycle
   , makeColorI 139 250 248 255
   , makeColorI 250 148 197 255
   , makeColorI 224 152 250 255
-  , makeColorI 158 250 149 255
+  , makeColorI 139 255 196 255
   ]
 
 loadGrids :: IO [Grid]
