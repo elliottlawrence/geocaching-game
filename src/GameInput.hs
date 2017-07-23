@@ -8,12 +8,12 @@ import           Types
 
 initialGameInput :: GameInput
 initialGameInput =
-  [ (leftKey, (Up, 0))
-  , (rightKey, (Up, 0))
-  , (downKey, (Up, 0))
-  , (upKey, (Up, 0))
-  , (spaceKey, (Up, 0))
-  , (enterKey, (Up, 0))
+  [ (KeyLeft, (Up, 0))
+  , (KeyRight, (Up, 0))
+  , (KeyUp, (Up, 0))
+  , (KeyDown, (Up, 0))
+  , (KeySpace, (Up, 0))
+  , (KeyEnter, (Up, 0))
   ] ++ map (\c -> (Char c, (Up, 0))) ['0'..'9']
 
 isKeyDown :: Key -> GameInput -> Bool
