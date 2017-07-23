@@ -1,58 +1,73 @@
+{-# LANGUAGE TypeFamilies #-}
 module Types where
 
 import           Control.Monad.State
 import           Data.Array
 import           System.Random
 
-import           Backend
+data KeyState = Up | Down deriving Eq
+
+data Key
+  = KeyLeft
+  | KeyRight
+  | KeyUp
+  | KeyDown
+  | KeySpace
+  | KeyEnter
+  | Char Char
+  deriving Eq
+
+data Event = EventKey Key KeyState
 
 type GameInput = [(Key, (KeyState, Int))]
+
+data Color = Color Int Int Int Int
 
 data Cell = Wall | Free deriving (Eq, Show)
 data Grid = Grid
   { gridArray :: Array (Int, Int) Cell
   , gridColor :: Color
-  } deriving Show
+  }
 
-data Cache = Cache
+data Cache a = Cache
   { cacheLocation :: (Int, Int)
   , cacheFound    :: Bool
-  , cachePic      :: Picture
-  } deriving Show
+  , cachePic      :: Picture a
+  }
 
-data Level = Level
-  { levelCaches  :: [Cache]
+data Level a = Level
+  { levelCaches  :: [Cache a]
   , levelName    :: String
-  , levelEnemies :: [Enemy]
-  } deriving Show
+  , levelEnemies :: [Enemy a]
+  }
 
-data Compass = Compass
-  { compassPic   :: Picture
+data Compass a = Compass
+  { compassPic   :: Picture a
   , compassAngle :: Int
   }
 
-data Signal = Signal
+data Signal a = Signal
   { signalLives    :: Int
-  , signalPic      :: Picture
+  , signalPic      :: Picture a
   , signalLocation :: (Int, Int)
   }
 
-data Enemy = Enemy
+data Enemy a = Enemy
   { enemyLocation  :: (Int, Int)
   , enemyDirection :: (Int, Int)
-  , enemyPic       :: Picture
+  , enemyPic       :: Picture a
   , enemyTime      :: Int
-  } deriving Show
+  }
 
-data Game = Game
+data Game a = Game
   { gameInput     :: GameInput
   , gameLevel     :: Int
-  , gameLevels    :: Array Int Level
-  , gameGetPic    :: GetPic
+  , gameLevels    :: Array Int (Level a)
+  , gameGetPic    :: GetPic a
   , gameGrids     :: [Grid]
   , gameRandomGen :: StdGen
-  , signal        :: Signal
-  , compass       :: Compass
+  , signal        :: Signal a
+  , compass       :: Compass a
   }
 
 data PictureName
@@ -73,6 +88,29 @@ data PictureName
   | PolicemanPic
   deriving (Eq, Enum, Show)
 
-type GetPic = PictureName -> Picture
+type GetPic a = PictureName -> Picture a
 
 type RandomT a = State StdGen a
+
+class Backend a where
+  data Picture a
+
+  loadImage :: FilePath -> IO (Picture a)
+
+  play :: a ->
+    Int ->
+    Game a ->
+    (Game a -> Picture a) ->
+    (Event -> Game a -> Game a) ->
+    (Game a -> Game a) ->
+    IO ()
+
+  blank :: Picture a
+  colored :: Color -> Picture a -> Picture a
+  circleSolid :: Double -> Picture a
+  line :: [(Double, Double)] -> Picture a
+  pictures :: [Picture a] -> Picture a
+  polygon :: [(Double, Double)] -> Picture a
+  scale :: Double -> Double -> Picture a -> Picture a
+  text :: String -> Picture a
+  translate :: Double -> Double -> Picture a -> Picture a

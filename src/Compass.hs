@@ -1,28 +1,30 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RecordWildCards       #-}
 module Compass where
 
 import           Data.List
 import           Data.Ord   (comparing)
 
-import           Backend
+import           Constants
 import           Renderable
 import           Types
 
-loadCompass :: GetPic -> Signal -> [Cache] -> Compass
+loadCompass :: GetPic a -> Signal a -> [Cache a] -> Compass a
 loadCompass getPic signal caches = Compass
   { compassPic = getPic CompassPic
   , compassAngle = getAngleFromSignalToNearestCache signal caches
   }
 
-instance Renderable Compass where
-  render Compass{..} = Pictures [compassPic, needle]
-    where needle = Translate 125 125 $
-            Color black $
-            Line [(0, 0), (needleLength * cos rads, needleLength * sin rads)]
+instance Backend a => Renderable (Compass a) a where
+  render Compass{..} = pictures [compassPic, needle]
+    where needle = translate 125 125 $
+            colored black $
+            line [(0, 0), (needleLength * cos rads, needleLength * sin rads)]
           needleLength = 75
           rads = fromIntegral compassAngle * pi / 180
 
-updateCompass :: Compass -> Signal -> [Cache] -> Compass
+updateCompass :: Compass a -> Signal a -> [Cache a] -> Compass a
 updateCompass compass@Compass{..} signal caches = compass { compassAngle = compassAngle' }
   where compassAngle' = (compassAngle + offset) `mod` 360
         desiredAngle = getAngleFromSignalToNearestCache signal caches
@@ -32,7 +34,7 @@ updateCompass compass@Compass{..} signal caches = compass { compassAngle = compa
         counterClockwiseDist = (desiredAngle - compassAngle) `mod` 360
         clockwiseDist = (compassAngle - desiredAngle) `mod` 360
 
-getAngleFromSignalToNearestCache :: Signal -> [Cache] -> Int
+getAngleFromSignalToNearestCache :: Signal a -> [Cache a] -> Int
 getAngleFromSignalToNearestCache Signal{..} caches = getAngleFromSignalToCache (getNearestCache caches)
   where
     getNearestCache = minimumBy (comparing distFromSignalToCache)

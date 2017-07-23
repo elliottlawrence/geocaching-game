@@ -24,7 +24,7 @@ levelConfigs =
   , ("Mega-Event Cache", 10, 5)
   ]
 
-loadLevels :: GetPic -> [Grid] -> RandomT (Array Int Level)
+loadLevels :: GetPic a -> [Grid] -> RandomT (Array Int (Level a))
 loadLevels getPic grids = do
   let (levelNames, numCachesPerLevel, numEnemiesPerLevel) = unzip3 levelConfigs
   allCaches <- loadAllCaches getPic grids numCachesPerLevel
@@ -37,7 +37,7 @@ loadLevels getPic grids = do
                 }) allCaches allEnemies levelNames
   return $ listArray (1, numLevels) levels
 
-updateLevel :: Level -> Signal -> Grid -> GameInput -> Bool -> RandomT Level
+updateLevel :: Level a -> Signal a -> Grid -> GameInput -> Bool -> RandomT (Level a)
 updateLevel level@Level{..} signal@Signal{..} grid gameInput didSignalDie = do
   let levelCaches' = map (updateCache signal gameInput) levelCaches
   levelEnemies' <- mapM (updateEnemy didSignalDie signalLives grid) levelEnemies
@@ -48,8 +48,8 @@ updateLevel level@Level{..} signal@Signal{..} grid gameInput didSignalDie = do
     }
 
 
-getCachesLeft :: Level -> Int
+getCachesLeft :: Level a -> Int
 getCachesLeft Level{..} = length levelCaches - length (filter cacheFound levelCaches)
 
-isLevelComplete :: Level -> Bool
+isLevelComplete :: Level a -> Bool
 isLevelComplete level = getCachesLeft level == 0

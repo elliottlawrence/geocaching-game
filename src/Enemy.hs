@@ -1,17 +1,18 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RecordWildCards       #-}
 module Enemy where
 
 import           Control.Monad
 import           System.Random
 
-import           Backend
 import           Constants
 import           Grid
 import           Renderable
 import           Types
 import           Utils
 
-getRandomEnemyPics :: [Picture] -> Int -> RandomT [Picture]
+getRandomEnemyPics :: [Picture a] -> Int -> RandomT [Picture a]
 getRandomEnemyPics enemyPics numEnemies = makeRandomT $
   map (enemyPics !!) . take numEnemies . randomRs (0, length enemyPics - 1)
 
@@ -20,7 +21,7 @@ innerCoords = [ (x,y) | x <- inner, y <- inner ]
   where padding = 4
         inner = [padding..gridTiles - 1 - padding]
 
-loadEnemies :: GetPic -> Grid -> Int -> RandomT [Enemy]
+loadEnemies :: GetPic a -> Grid -> Int -> RandomT [Enemy a]
 loadEnemies getPic grid numEnemies = do
   let enemyPics = map getPic [CactusPic, SpiderPic, PolicemanPic]
   randomEnemyPics <- getRandomEnemyPics enemyPics numEnemies
@@ -35,13 +36,13 @@ loadEnemies getPic grid numEnemies = do
       , enemyTime = 0
       }) locations randomEnemyPics
 
-loadAllEnemies :: GetPic -> [Grid] -> [Int] -> RandomT [[Enemy]]
+loadAllEnemies :: GetPic a -> [Grid] -> [Int] -> RandomT [[Enemy a]]
 loadAllEnemies getPic = zipWithM (loadEnemies getPic)
 
-instance Renderable Enemy where
+instance Backend a => Renderable (Enemy a) a where
   render Enemy{..} = renderOnGrid enemyLocation enemyPic
 
-updateEnemy :: Bool -> Int -> Grid -> Enemy -> RandomT Enemy
+updateEnemy :: Bool -> Int -> Grid -> Enemy a -> RandomT (Enemy a)
 updateEnemy didSignalDie signalLives grid enemy@Enemy{..}
   | didSignalDie && signalLives > 0 = do
     [enemyLocation'] <- getRandomLocations grid 1 innerCoords

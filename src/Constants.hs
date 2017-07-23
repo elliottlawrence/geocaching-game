@@ -1,5 +1,7 @@
 module Constants where
 
+import           Types
+
 isDebug :: Bool
 isDebug = True
 
@@ -20,3 +22,7 @@ initialSignalLocation = (12,12)
 
 signalSpeed :: Int
 signalSpeed = 9
+
+black, red :: Color
+black = Color 0 0 0 255
+red = Color 255 0 0 255

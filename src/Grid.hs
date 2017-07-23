@@ -1,4 +1,6 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RecordWildCards       #-}
 module Grid where
 
 import           Control.Monad.State
@@ -6,7 +8,6 @@ import           Data.Array
 import           Data.List
 import           System.Random
 
-import           Backend
 import           Constants
 import           Renderable
 import           Types
@@ -18,20 +19,20 @@ instance Read Cell where
   readsPrec _ _ = error "Invalid grid"
 
 wallColor :: Color
-wallColor = makeColorI 96 96 96 255
+wallColor = Color 96 96 96 255
 
 gridColors :: [Color]
 gridColors =
-  [ makeColorI 210 250 139 255
-  , makeColorI 250 169 140 255
-  , makeColorI 114 175 250 255
-  , makeColorI 250 247 115 255
-  , makeColorI 147 141 250 255
-  , makeColorI 250 208 131 255
-  , makeColorI 139 250 248 255
-  , makeColorI 250 148 197 255
-  , makeColorI 224 152 250 255
-  , makeColorI 139 255 196 255
+  [ Color 210 250 139 255
+  , Color 250 169 140 255
+  , Color 114 175 250 255
+  , Color 250 247 115 255
+  , Color 147 141 250 255
+  , Color 250 208 131 255
+  , Color 139 250 248 255
+  , Color 250 148 197 255
+  , Color 224 152 250 255
+  , Color 139 255 196 255
   ]
 
 loadGrids :: IO [Grid]
@@ -53,11 +54,11 @@ chunkify _ [] = []
 chunkify i xs = first : chunkify i rest
   where (first, rest) = splitAt i xs
 
-tileSize' :: Float
+tileSize' :: Double
 tileSize' = fromIntegral tileSize
 
-instance Renderable Grid where
-  render grid@Grid{..} = Pictures cells
+instance Backend a => Renderable Grid a where
+  render grid@Grid{..} = pictures cells
     where cells = map (\((x,y), cell) ->
             renderOnGrid (x,y)
             (case cell of
@@ -65,16 +66,16 @@ instance Renderable Grid where
               Free -> renderFreeCell grid))
             (assocs gridArray)
 
-renderFreeCell :: Grid -> Picture
-renderFreeCell Grid{..} = Color gridColor $ rectangle tileSize' tileSize'
+renderFreeCell :: Backend a => Grid -> Picture a
+renderFreeCell Grid{..} = colored gridColor $ rectangle tileSize' tileSize'
 
 data Corner = TL | TR | BL | BR
 
-renderWallCell :: (Int, Int) -> Grid -> Picture
-renderWallCell (x,y) grid@Grid{..} = Pictures
+renderWallCell :: Backend a => (Int, Int) -> Grid -> Picture a
+renderWallCell (x,y) grid@Grid{..} = pictures
   [ renderFreeCell grid
-  , Color wallColor $ Pictures $
-    Translate halfTile halfTile (circleSolid halfTile) :
+  , colored wallColor $ pictures $
+    translate halfTile halfTile (circleSolid halfTile) :
     corners
   ]
   where
@@ -82,9 +83,9 @@ renderWallCell (x,y) grid@Grid{..} = Pictures
     quarterWall = rectangle halfTile halfTile
 
     renderCorner TL = quarterWall
-    renderCorner TR = Translate halfTile 0 quarterWall
-    renderCorner BL = Translate 0 halfTile quarterWall
-    renderCorner BR = Translate halfTile halfTile quarterWall
+    renderCorner TR = translate halfTile 0 quarterWall
+    renderCorner BL = translate 0 halfTile quarterWall
+    renderCorner BR = translate halfTile halfTile quarterWall
 
     getAdjacentCells TL = [(x-1, y), (x, y+1)]
     getAdjacentCells TR = [(x+1, y), (x, y+1)]
@@ -95,8 +96,8 @@ renderWallCell (x,y) grid@Grid{..} = Pictures
     corners = [ renderCorner corner | corner <- [TL, TR, BL, BR], hasCorner corner ]
 
 
-renderOnGrid :: (Int, Int) -> Picture ->  Picture
-renderOnGrid (x, y) = Translate x' y'
+renderOnGrid :: Backend a => (Int, Int) -> Picture a ->  Picture a
+renderOnGrid (x, y) = translate x' y'
   where [x', y'] = map (fromIntegral . (* tileSize)) [x, gridTiles - 1 - y]
 
 isGridCellFree :: Grid -> (Int, Int)  -> Bool

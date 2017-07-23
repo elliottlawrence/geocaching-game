@@ -1,4 +1,6 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RecordWildCards       #-}
 module Signal where
 
 import           Constants
@@ -7,36 +9,36 @@ import           Grid
 import           Renderable
 import           Types
 
-loadSignal :: GetPic -> Signal
+loadSignal :: GetPic a -> Signal a
 loadSignal getPic = Signal
   { signalLives = numLives
   , signalPic = getPic SignalPic
   , signalLocation = initialSignalLocation
   }
 
-instance Renderable Signal where
+instance Backend a => Renderable (Signal a) a where
   render Signal{..} = renderOnGrid signalLocation signalPic
 
-updateSignal :: Signal -> GameInput -> Grid -> [Enemy] -> Signal
+updateSignal :: Signal a -> GameInput -> Grid -> [Enemy a] -> Signal a
 updateSignal signal@Signal{..} gameInput grid enemies
   | shouldSignalDie signal enemies = loseLife signal
   | otherwise = signal { signalLocation = signalLocation'' }
   where (x, y) = signalLocation
         (offsetX, offsetY)
-          | isKeyDown rightKey gameInput = (1,0)
-          | isKeyDown leftKey gameInput = (-1,0)
-          | isKeyDown upKey gameInput = (0,-1)
-          | isKeyDown downKey gameInput = (0,1)
+          | isKeyDown KeyRight gameInput = (1,0)
+          | isKeyDown KeyLeft gameInput = (-1,0)
+          | isKeyDown KeyUp gameInput = (0,-1)
+          | isKeyDown KeyDown gameInput = (0,1)
           | otherwise = (0,0)
         signalLocation' = (x + offsetX, y + offsetY)
         signalLocation'' = if isGridCellFree grid signalLocation'
           then signalLocation'
           else signalLocation
 
-shouldSignalDie :: Signal -> [Enemy] -> Bool
+shouldSignalDie :: Signal a -> [Enemy a] -> Bool
 shouldSignalDie Signal{..} = any (\Enemy{..} -> signalLocation == enemyLocation)
 
-loseLife :: Signal -> Signal
+loseLife :: Signal a -> Signal a
 loseLife signal@Signal{..} =
   signal { signalLives = signalLives', signalLocation = signalLocation' }
   where signalLives' = signalLives - 1

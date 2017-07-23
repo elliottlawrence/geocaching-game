@@ -1,7 +1,8 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RecordWildCards       #-}
 module Cache where
 
-import           Backend
 import           Constants
 import           GameInput
 import           Grid
@@ -10,7 +11,7 @@ import           Renderable
 import           Types
 import           Utils
 
-loadCaches :: GetPic -> Grid -> Int -> Int -> RandomT [Cache]
+loadCaches :: GetPic a -> Grid -> Int -> Int -> RandomT [Cache a]
 loadCaches getPic grid levelNum numCaches = do
   locations <- getRandomLocations grid numCaches [initialSignalLocation]
   let cachePic = getPic (getPicNameForLevel levelNum)
@@ -21,17 +22,17 @@ loadCaches getPic grid levelNum numCaches = do
                 }) locations
   return caches
 
-loadAllCaches :: GetPic -> [Grid] -> [Int] -> RandomT [[Cache]]
+loadAllCaches :: GetPic a -> [Grid] -> [Int] -> RandomT [[Cache a]]
 loadAllCaches getPic grids = zipWith3M (loadCaches getPic) grids [1..]
 
-instance Renderable Cache where
+instance Backend a => Renderable (Cache a) a where
   render Cache{..} = renderOnGrid cacheLocation pic
     where pic | cacheFound = cachePic
-              -- | isDebug = Color red $ rectangle tileSize tileSize
-              | otherwise = Blank
+              | isDebug = colored red $ rectangle tileSize' tileSize'
+              | otherwise = blank
 
-updateCache :: Signal -> GameInput -> Cache -> Cache
+updateCache :: Signal a -> GameInput -> Cache a -> Cache a
 updateCache Signal{..} gameInput cache@Cache{..}
   | didSignalFindCache = cache { cacheFound = True }
   | otherwise = cache
-  where didSignalFindCache = isKeyDown spaceKey gameInput && signalLocation == cacheLocation
+  where didSignalFindCache = isKeyDown KeySpace gameInput && signalLocation == cacheLocation

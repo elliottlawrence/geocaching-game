@@ -1,9 +1,11 @@
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 module Renderable where
 
-import           Backend
+import           Types
 
-class Renderable a where
-  render :: a -> Picture
+class Backend b => Renderable a b where
+  render :: a -> Picture b
 
-instance Renderable a => Renderable [a] where
+instance Renderable a b => Renderable [a] b where
   render = pictures . map render

@@ -1,26 +1,18 @@
-module Backend (
-  Gloss.Picture(..),
-  Gloss.Color,
-  Gloss.Event(..),
-  Gloss.Key(..),
-  Gloss.KeyState(..),
-  Gloss.SpecialKey(..),
-  getWindow,
-  Gloss.circleSolid,
-  Gloss.black,
-  Gloss.play,
-  Gloss.pictures,
-  Gloss.makeColorI,
-  Gloss.viewPortTranslate,
-  Gloss.viewPortInit,
-  Gloss.applyViewPortToPicture,
-  Juicy.loadJuicyPNG,
-) where
+{-# LANGUAGE CPP #-}
+module Backend where
 
-import qualified Graphics.Gloss                     as Gloss
-import qualified Graphics.Gloss.Data.ViewPort       as Gloss
-import qualified Graphics.Gloss.Interface.Pure.Game as Gloss
-import qualified Graphics.Gloss.Juicy               as Juicy
+#ifdef __GHCJS__
 
-getWindow :: String -> (Int, Int) -> (Int, Int) -> Gloss.Display
-getWindow = Gloss.InWindow
+import           Backend.ShineBackend
+
+defaultBackend :: ShineBackend
+defaultBackend = ShineBackend
+
+#else
+
+import           Backend.GlossBackend
+
+defaultBackend :: GlossBackend
+defaultBackend = GlossBackend
+
+#endif

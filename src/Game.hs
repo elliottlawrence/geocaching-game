@@ -1,11 +1,12 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RecordWildCards       #-}
 module Game where
 
 import           Control.Monad.State
 import           Data.Array
 import           Data.Maybe
 
-import           Backend
 import           Compass
 import           Constants
 import           GameInput
@@ -15,7 +16,7 @@ import           Signal
 import           Types
 import           Utils
 
-loadInitialGame :: GetPic -> [Grid] -> RandomT Game
+loadInitialGame :: GetPic a -> [Grid] -> RandomT (Game a)
 loadInitialGame getPic grids = do
   levels <- loadLevels getPic grids
   let signal = loadSignal getPic
@@ -34,33 +35,30 @@ loadInitialGame getPic grids = do
     , compass = compass
     }
 
-getCurrentLevel :: Game -> Level
+getCurrentLevel :: Game a -> Level a
 getCurrentLevel Game{..} = gameLevels ! gameLevel
 
-getCurrentGrid :: Game -> Grid
+getCurrentGrid :: Game a -> Grid
 getCurrentGrid Game{..} = gameGrids !! (gameLevel - 1)
 
-getCurrentCaches :: Game -> [Cache]
+getCurrentCaches :: Game a -> [Cache a]
 getCurrentCaches game = levelCaches
   where Level{..} = getCurrentLevel game
 
-isGameWon :: Game -> Bool
+isGameWon :: Game a -> Bool
 isGameWon Game{..} = isLevelComplete (gameLevels ! numLevels)
 
-isGameOver :: Game -> Bool
+isGameOver :: Game a -> Bool
 isGameOver Game{..} = signalLives signal <= 0
 
-instance Renderable Game where
-  render game@Game{..} = applyViewPortToPicture viewPort $ Pictures
+instance Backend a => Renderable (Game a) a where
+  render game@Game{..} = pictures
     [ render compass
     , getGutterArea game
-    , Translate (fromIntegral gutter) 0 gridArea
+    , translate (fromIntegral gutter) 0 gridArea
     ]
     where
-      viewPort = viewPortInit {
-        viewPortTranslate = (-fromIntegral windowX/2, -fromIntegral windowY/2)
-      }
-      gridArea = Pictures
+      gridArea = pictures
         [ render $ getCurrentGrid game
         , render $ getCurrentCaches game
         , render enemies
@@ -69,19 +67,19 @@ instance Renderable Game where
         ]
       enemies = levelEnemies $ getCurrentLevel game
 
-getOverlay :: Game -> Picture
+getOverlay :: Backend a => Game a -> Picture a
 getOverlay game@Game{..}
   | isGameOver game || levelComplete =
-    Pictures
-      [ Color transparentBlue $ rectangle (fromIntegral gridSize) (fromIntegral windowY)
+    pictures
+      [ colored transparentBlue $ rectangle (fromIntegral gridSize) (fromIntegral windowY)
       , textPicture
       ]
-  | otherwise = Blank
+  | otherwise = blank
   where
     levelComplete = isLevelComplete (getCurrentLevel game)
 
-    transparentBlue = makeColorI 0 30 60 130
-    white = makeColorI 255 255 255 255
+    transparentBlue = Color 0 30 60 130
+    white = Color 255 255 255 255
 
     maybeText
       | isGameOver game = Just "Game Over"
@@ -89,37 +87,37 @@ getOverlay game@Game{..}
       | levelComplete = Just "Level Complete!"
       | otherwise = Nothing
     textPicture = maybe
-      Blank
-      (Translate (fromIntegral gridSize / 2 - 80) (fromIntegral windowY / 2 - 10) .
-        Scale 0.2 0.2 .
-        Color white .
-        Text)
+      blank
+      (translate (fromIntegral gridSize / 2 - 80) (fromIntegral windowY / 2 - 10) .
+        scale 0.2 0.2 .
+        colored white .
+        text)
       maybeText
 
-getGutterArea :: Game -> Picture
+getGutterArea :: Backend a => Game a -> Picture a
 getGutterArea game@Game{..} =
-  Pictures [levelText, cacheType, livesText, cachesLeftText]
+  pictures [levelText, cacheType, livesText, cachesLeftText]
   where
-    gold = makeColorI 239 174 0 255
-    orange = makeColorI 237 100 0 255
+    gold = Color 239 174 0 255
+    orange = Color 237 100 0 255
 
-    createBigText = Scale 0.2 0.2 . Color gold . Text
-    createSmallText = Scale 0.15 0.15 . Color orange . Text
+    createBigText = scale 0.2 0.2 . colored gold . text
+    createSmallText = scale 0.15 0.15 . colored orange . text
 
-    levelText = Translate 10 460 $ createBigText $ "Level " ++ show gameLevel ++ ":"
-    cacheType = Translate 10 430 $ createBigText levelName
+    levelText = translate 10 460 $ createBigText $ "Level " ++ show gameLevel ++ ":"
+    cacheType = translate 10 430 $ createBigText levelName
 
-    livesText = Translate 10 350 $ createSmallText $ "Lives: " ++ show (signalLives signal)
-    cachesLeftText = Translate 10 320 $ createSmallText $ "Caches left: " ++ show cachesLeft
+    livesText = translate 10 350 $ createSmallText $ "Lives: " ++ show (signalLives signal)
+    cachesLeftText = translate 10 320 $ createSmallText $ "Caches left: " ++ show cachesLeft
 
     level@Level{..} = getCurrentLevel game
     cachesLeft = getCachesLeft level
 
-updateGame :: Float -> Game -> Game
-updateGame _ game@Game{..} = game' { gameRandomGen = g' }
+updateGame :: Game a -> Game a
+updateGame game@Game{..} = game' { gameRandomGen = g' }
   where (game', g') = runState (updateGame' game) gameRandomGen
 
-updateGame' :: Game -> RandomT Game
+updateGame' :: Game a -> RandomT (Game a)
 updateGame' game@Game{..}
   | (isGameOver game || isGameWon game) && isEnterDown gameInput =
     loadInitialGame gameGetPic gameGrids
@@ -156,7 +154,7 @@ updateGame' game@Game{..}
       | isDebug && isJust numKeyDown = numKeyDown
       | otherwise = Nothing
 
-setLevel :: Int -> Game -> Game
+setLevel :: Int -> Game a -> Game a
 setLevel level game@Game{..} = game
   { signal = signal'
   , gameLevel = level
