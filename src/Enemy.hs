@@ -2,9 +2,9 @@
 module Enemy where
 
 import           Control.Monad
-import           Graphics.Gloss
 import           System.Random
 
+import           Backend
 import           Constants
 import           Grid
 import           Renderable

@@ -2,9 +2,9 @@
 module Compass where
 
 import           Data.List
-import           Data.Ord       (comparing)
-import           Graphics.Gloss
+import           Data.Ord   (comparing)
 
+import           Backend
 import           Renderable
 import           Types
 

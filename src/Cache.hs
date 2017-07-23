@@ -1,8 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 module Cache where
 
-import           Graphics.Gloss
-
+import           Backend
 import           Constants
 import           GameInput
 import           Grid

@@ -2,9 +2,9 @@ module Types where
 
 import           Control.Monad.State
 import           Data.Array
-import           Graphics.Gloss
-import           Graphics.Gloss.Interface.Pure.Game
 import           System.Random
+
+import           Backend
 
 type GameInput = [(Key, (KeyState, Int))]
 

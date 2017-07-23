@@ -2,8 +2,8 @@
 module GameInput where
 
 import           Data.Char
-import           Graphics.Gloss.Interface.IO.Game
 
+import           Backend
 import           Constants
 import           Types
 

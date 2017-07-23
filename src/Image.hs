@@ -2,9 +2,8 @@ module Image where
 
 import           Data.Char
 import           Data.Maybe
-import           Graphics.Gloss
-import           Graphics.Gloss.Juicy
 
+import           Backend
 import           Types
 
 loadPNG :: FilePath -> IO Picture
@@ -19,7 +18,7 @@ getPicNameForLevel :: Int -> PictureName
 getPicNameForLevel i = toEnum $ fromEnum Level1Pic + i - 1
 
 getPicPath :: PictureName -> FilePath
-getPicPath picName = "images/" ++ name ++ ".png"
+getPicPath picName = "docs/images/" ++ name ++ ".png"
   where constructorName = show picName
         name = map toLower
           $ take (length constructorName - length "Pic") constructorName

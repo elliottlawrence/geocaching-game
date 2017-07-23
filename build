@@ -1,0 +1,4 @@
+#!/bin/bash
+
+stack build --stack-yaml=desktop/stack.yaml
+stack exec geocaching-game-exe --stack-yaml=desktop/stack.yaml

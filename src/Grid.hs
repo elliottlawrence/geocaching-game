@@ -4,9 +4,9 @@ module Grid where
 import           Control.Monad.State
 import           Data.Array
 import           Data.List
-import           Graphics.Gloss
 import           System.Random
 
+import           Backend
 import           Constants
 import           Renderable
 import           Types
@@ -36,7 +36,7 @@ gridColors =
 
 loadGrids :: IO [Grid]
 loadGrids = do
-  gridData <- readFile "grids.txt"
+  gridData <- readFile "docs/grids.txt"
   let cellChunks = chunkify (gridTiles ^ (2 :: Int)) (map read $ words gridData)
       grids = take numLevels $ cycle $ zipWith loadGrid cellChunks gridColors
   return grids

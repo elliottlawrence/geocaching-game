@@ -1,9 +1,9 @@
 module Utils where
 
 import           Control.Monad.State
-import           Graphics.Gloss
 import           System.Random
 
+import           Backend
 import           Types
 
 zipWith3M :: (Applicative m) => (a -> b -> c -> m d) -> [a] -> [b] -> [c] -> m [d]

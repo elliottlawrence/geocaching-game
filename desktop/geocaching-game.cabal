@@ -22,7 +22,8 @@ executable geocaching-game-exe
                      , mtl
                      , random
   default-language:    Haskell2010
-  other-modules:       Cache
+  other-modules:       Backend
+                     , Cache
                      , Compass
                      , Constants
                      , Enemy

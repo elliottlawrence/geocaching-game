@@ -4,9 +4,8 @@ module Game where
 import           Control.Monad.State
 import           Data.Array
 import           Data.Maybe
-import           Graphics.Gloss               hiding (orange, white)
-import           Graphics.Gloss.Data.ViewPort
 
+import           Backend
 import           Compass
 import           Constants
 import           GameInput

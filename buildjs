@@ -1,0 +1,10 @@
+#!/bin/bash
+
+stack build --stack-yaml=js/stack.yaml
+
+cp $(stack path --stack-yaml=js/stack.yaml --local-install-root)/bin/geocaching-game-exe.jsexe/rts.js docs/rts.js
+cp $(stack path --stack-yaml=js/stack.yaml --local-install-root)/bin/geocaching-game-exe.jsexe/lib.js docs/lib.js
+cp $(stack path --stack-yaml=js/stack.yaml --local-install-root)/bin/geocaching-game-exe.jsexe/out.js docs/out.js
+cp $(stack path --stack-yaml=js/stack.yaml --local-install-root)/bin/geocaching-game-exe.jsexe/runmain.js docs/runmain.js
+
+open docs/index.html

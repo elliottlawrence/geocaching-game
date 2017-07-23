@@ -1,6 +1,6 @@
 module Renderable where
 
-import           Graphics.Gloss
+import           Backend
 
 class Renderable a where
   render :: a -> Picture
