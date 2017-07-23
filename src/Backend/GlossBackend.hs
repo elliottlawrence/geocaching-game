@@ -12,16 +12,16 @@ import           Types
 data GlossBackend = GlossBackend
 
 instance Backend GlossBackend where
-  data Picture GlossBackend = GlossPicture Gloss.Picture
+  type Picture GlossBackend = Gloss.Picture
 
   loadImage path = do
     png <- loadJuicyPNG path
     case png of
       Just bmp@(Gloss.Bitmap w h _ _) -> return $
-        GlossPicture $ Gloss.Translate (fromIntegral w/2) (fromIntegral h/2) bmp
+        Gloss.Translate (fromIntegral w/2) (fromIntegral h/2) bmp
       _ -> ioError $ userError $ "File not found: " ++ path
 
-  play GlossBackend fps initialGame renderGame handleInput updateGame =
+  play _ fps initialGame renderGame handleInput updateGame =
     Gloss.play
       window
       Gloss.black
@@ -32,7 +32,7 @@ instance Backend GlossBackend where
       updateGame'
     where
       window = Gloss.InWindow "Geocaching Game" (windowX, windowY) (200, 200)
-      renderGame' = Gloss.applyViewPortToPicture viewPort . unPic . renderGame
+      renderGame' = Gloss.applyViewPortToPicture viewPort . renderGame
       viewPort = Gloss.viewPortInit {
         Gloss.viewPortTranslate = (-fromIntegral windowX/2, -fromIntegral windowY/2)
       }
@@ -41,21 +41,18 @@ instance Backend GlossBackend where
         Nothing -> game
       updateGame' _ = updateGame
 
-  blank = GlossPicture Gloss.Blank
-  circleSolid = GlossPicture . Gloss.circleSolid . realToFrac
-  colored (Color r g b a) = GlossPicture . Gloss.Color (Gloss.makeColorI r g b a) . unPic
-  line = GlossPicture . Gloss.Line . map toFloat
-  pictures = GlossPicture . Gloss.Pictures . map unPic
-  polygon = GlossPicture . Gloss.Polygon . map toFloat
-  scale x y = GlossPicture . Gloss.Scale (realToFrac x) (realToFrac y) . unPic
-  text = GlossPicture . Gloss.Text
-  translate x y = GlossPicture . Gloss.Translate (realToFrac x) (realToFrac y) . unPic
+  blank = Gloss.Blank
+  circleSolid = Gloss.circleSolid . realToFrac
+  colored (Color r g b a) = Gloss.Color (Gloss.makeColorI r g b a)
+  line = Gloss.Line . map toFloat
+  pictures = Gloss.Pictures
+  polygon = Gloss.Polygon . map toFloat
+  scale x y = Gloss.Scale (realToFrac x) (realToFrac y)
+  text = Gloss.Text
+  translate x y = Gloss.Translate (realToFrac x) (realToFrac y)
 
 toFloat :: (Double, Double) -> (Float, Float)
 toFloat (x,y) = (realToFrac x, realToFrac y)
-
-unPic :: Picture GlossBackend -> Gloss.Picture
-unPic (GlossPicture pic) = pic
 
 toEvent :: Gloss.Event -> Maybe Event
 toEvent (Gloss.EventKey key keyState _ _) =

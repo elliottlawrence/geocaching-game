@@ -96,7 +96,7 @@ renderWallCell (x,y) grid@Grid{..} = pictures
     corners = [ renderCorner corner | corner <- [TL, TR, BL, BR], hasCorner corner ]
 
 
-renderOnGrid :: Backend a => (Int, Int) -> Picture a ->  Picture a
+renderOnGrid :: Backend a => (Int, Int) -> Picture a -> Picture a
 renderOnGrid (x, y) = translate x' y'
   where [x', y'] = map (fromIntegral . (* tileSize)) [x, gridTiles - 1 - y]
 

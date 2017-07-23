@@ -14,7 +14,6 @@ import           Level
 import           Renderable
 import           Signal
 import           Types
-import           Utils
 
 loadInitialGame :: GetPic a -> [Grid] -> RandomT (Game a)
 loadInitialGame getPic grids = do

@@ -93,11 +93,12 @@ type GetPic a = PictureName -> Picture a
 type RandomT a = State StdGen a
 
 class Backend a where
-  data Picture a
+  type Picture a = p | p -> a
 
   loadImage :: FilePath -> IO (Picture a)
 
-  play :: a ->
+  play ::
+    a ->
     Int ->
     Game a ->
     (Game a -> Picture a) ->
@@ -111,6 +112,8 @@ class Backend a where
   line :: [(Double, Double)] -> Picture a
   pictures :: [Picture a] -> Picture a
   polygon :: [(Double, Double)] -> Picture a
+  rectangle :: Double -> Double -> Picture a
+  rectangle w h = polygon [(0, 0), (w, 0), (w, h), (0, h)]
   scale :: Double -> Double -> Picture a -> Picture a
   text :: String -> Picture a
   translate :: Double -> Double -> Picture a -> Picture a
