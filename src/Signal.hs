@@ -19,7 +19,7 @@ loadSignal getPic = Signal
 instance Backend a => Renderable (Signal a) a where
   render Signal{..} = renderOnGrid signalLocation signalPic
 
-updateSignal :: Signal a -> GameInput -> Grid -> [Enemy a] -> Signal a
+updateSignal :: Signal a -> GameInput -> Grid a -> [Enemy a] -> Signal a
 updateSignal signal@Signal{..} gameInput grid enemies
   | shouldSignalDie signal enemies = loseLife signal
   | otherwise = signal { signalLocation = signalLocation'' }

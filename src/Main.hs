@@ -17,7 +17,7 @@ main = do
 
   play
     defaultBackend
-    60      -- fps
+    60  -- fps
     initialGame
     render
     handleInput

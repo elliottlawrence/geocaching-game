@@ -12,14 +12,9 @@ import           Types
 data GlossBackend = GlossBackend
 
 instance Backend GlossBackend where
+  type FloatType GlossBackend = Float
   type Picture GlossBackend = Gloss.Picture
-
-  loadImage path = do
-    png <- loadJuicyPNG path
-    case png of
-      Just bmp@(Gloss.Bitmap w h _ _) -> return $
-        Gloss.Translate (fromIntegral w/2) (fromIntegral h/2) bmp
-      _ -> ioError $ userError $ "File not found: " ++ path
+  type Color GlossBackend = Gloss.Color
 
   play _ fps initialGame renderGame handleInput updateGame =
     Gloss.play
@@ -36,23 +31,27 @@ instance Backend GlossBackend where
       viewPort = Gloss.viewPortInit {
         Gloss.viewPortTranslate = (-fromIntegral windowX/2, -fromIntegral windowY/2)
       }
-      handleInput' event game = case toEvent event of
-        Just event' -> handleInput event' game
-        Nothing -> game
+      handleInput' event game = maybe game (`handleInput` game) (toEvent event)
       updateGame' _ = updateGame
 
-  blank = Gloss.Blank
-  circleSolid = Gloss.circleSolid . realToFrac
-  colored (Color r g b a) = Gloss.Color (Gloss.makeColorI r g b a)
-  line = Gloss.Line . map toFloat
-  pictures = Gloss.Pictures
-  polygon = Gloss.Polygon . map toFloat
-  scale x y = Gloss.Scale (realToFrac x) (realToFrac y)
-  text = Gloss.Text
-  translate x y = Gloss.Translate (realToFrac x) (realToFrac y)
+  loadImage path = do
+    png <- loadJuicyPNG path
+    case png of
+      Just bmp@(Gloss.Bitmap w h _ _) -> return $
+        Gloss.Translate (fromIntegral w/2) (fromIntegral h/2) bmp
+      _ -> ioError $ userError $ "File not found: " ++ path
 
-toFloat :: (Double, Double) -> (Float, Float)
-toFloat (x,y) = (realToFrac x, realToFrac y)
+  makeColor = Gloss.makeColorI
+
+  blank = Gloss.Blank
+  circleSolid = Gloss.circleSolid
+  colored = Gloss.Color
+  line = Gloss.Line
+  pictures = Gloss.Pictures
+  polygon = Gloss.Polygon
+  scale = Gloss.Scale
+  text = Gloss.Text
+  translate = Gloss.Translate
 
 toEvent :: Gloss.Event -> Maybe Event
 toEvent (Gloss.EventKey key keyState _ _) =

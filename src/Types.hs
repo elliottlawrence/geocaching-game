@@ -1,5 +1,6 @@
-{-# LANGUAGE TypeFamilies           #-}
-{-# LANGUAGE TypeFamilyDependencies #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeFamilyDependencies     #-}
+{-# LANGUAGE FlexibleContexts           #-}
 module Types where
 
 import           Control.Monad.State
@@ -22,12 +23,10 @@ data Event = EventKey Key KeyState
 
 type GameInput = [(Key, (KeyState, Int))]
 
-data Color = Color Int Int Int Int
-
 data Cell = Wall | Free deriving (Eq, Show)
-data Grid = Grid
+data Grid a = Grid
   { gridArray :: Array (Int, Int) Cell
-  , gridColor :: Color
+  , gridColor :: Color a
   }
 
 data Cache a = Cache
@@ -65,7 +64,7 @@ data Game a = Game
   , gameLevel     :: Int
   , gameLevels    :: Array Int (Level a)
   , gameGetPic    :: GetPic a
-  , gameGrids     :: [Grid]
+  , gameGrids     :: [Grid a]
   , gameRandomGen :: StdGen
   , signal        :: Signal a
   , compass       :: Compass a
@@ -93,10 +92,10 @@ type GetPic a = PictureName -> Picture a
 
 type RandomT a = State StdGen a
 
-class Backend a where
+class (Floating (FloatType a)) => Backend a where
+  type FloatType a = f | f -> a
   type Picture a = p | p -> a
-
-  loadImage :: FilePath -> IO (Picture a)
+  type Color a = c | c -> a
 
   play ::
     a ->
@@ -107,14 +106,18 @@ class Backend a where
     (Game a -> Game a) ->
     IO ()
 
+  loadImage :: FilePath -> IO (Picture a)
+
+  makeColor :: Int -> Int -> Int -> Int -> Color a
+
   blank :: Picture a
-  colored :: Color -> Picture a -> Picture a
-  circleSolid :: Double -> Picture a
-  line :: [(Double, Double)] -> Picture a
+  colored :: Color a -> Picture a -> Picture a
+  circleSolid :: FloatType a -> Picture a
+  line :: [(FloatType a, FloatType a)] -> Picture a
   pictures :: [Picture a] -> Picture a
-  polygon :: [(Double, Double)] -> Picture a
-  rectangle :: Double -> Double -> Picture a
+  polygon :: [(FloatType a, FloatType a)] -> Picture a
+  rectangle :: FloatType a -> FloatType a -> Picture a
   rectangle w h = polygon [(0, 0), (w, 0), (w, h), (0, h)]
-  scale :: Double -> Double -> Picture a -> Picture a
+  scale :: FloatType a -> FloatType a -> Picture a -> Picture a
   text :: String -> Picture a
-  translate :: Double -> Double -> Picture a -> Picture a
+  translate :: FloatType a -> FloatType a -> Picture a -> Picture a

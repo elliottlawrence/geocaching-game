@@ -23,6 +23,6 @@ initialSignalLocation = (12,12)
 signalSpeed :: Int
 signalSpeed = 9
 
-black, red :: Color
-black = Color 0 0 0 255
-red = Color 255 0 0 255
+black, red :: Backend a => Color a
+black = makeColor 0 0 0 255
+red = makeColor 255 0 0 255

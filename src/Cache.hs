@@ -11,7 +11,7 @@ import           Renderable
 import           Types
 import           Utils
 
-loadCaches :: GetPic a -> Grid -> Int -> Int -> RandomT [Cache a]
+loadCaches :: GetPic a -> Grid a -> Int -> Int -> RandomT [Cache a]
 loadCaches getPic grid levelNum numCaches = do
   locations <- getRandomLocations grid numCaches [initialSignalLocation]
   let cachePic = getPic (getPicNameForLevel levelNum)
@@ -22,7 +22,7 @@ loadCaches getPic grid levelNum numCaches = do
                 }) locations
   return caches
 
-loadAllCaches :: GetPic a -> [Grid] -> [Int] -> RandomT [[Cache a]]
+loadAllCaches :: GetPic a -> [Grid a] -> [Int] -> RandomT [[Cache a]]
 loadAllCaches getPic grids = zipWith3M (loadCaches getPic) grids [1..]
 
 instance Backend a => Renderable (Cache a) a where

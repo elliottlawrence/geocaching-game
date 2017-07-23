@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RecordWildCards       #-}
@@ -18,31 +19,31 @@ instance Read Cell where
   readsPrec _ ('1':s) = [(Wall,s)]
   readsPrec _ _ = error "Invalid grid"
 
-wallColor :: Color
-wallColor = Color 96 96 96 255
+wallColor :: Backend a => Color a
+wallColor = makeColor 96 96 96 255
 
-gridColors :: [Color]
+gridColors :: Backend a => [Color a]
 gridColors =
-  [ Color 210 250 139 255
-  , Color 250 169 140 255
-  , Color 114 175 250 255
-  , Color 250 247 115 255
-  , Color 147 141 250 255
-  , Color 250 208 131 255
-  , Color 139 250 248 255
-  , Color 250 148 197 255
-  , Color 224 152 250 255
-  , Color 139 255 196 255
+  [ makeColor 210 250 139 255
+  , makeColor 250 169 140 255
+  , makeColor 114 175 250 255
+  , makeColor 250 247 115 255
+  , makeColor 147 141 250 255
+  , makeColor 250 208 131 255
+  , makeColor 139 250 248 255
+  , makeColor 250 148 197 255
+  , makeColor 224 152 250 255
+  , makeColor 139 255 196 255
   ]
 
-loadGrids :: IO [Grid]
+loadGrids :: Backend a => IO [Grid a]
 loadGrids = do
   gridData <- readFile "docs/grids.txt"
   let cellChunks = chunkify (gridTiles ^ (2 :: Int)) (map read $ words gridData)
       grids = take numLevels $ cycle $ zipWith loadGrid cellChunks gridColors
   return grids
 
-loadGrid :: [Cell] -> Color -> Grid
+loadGrid :: [Cell] -> Color a -> Grid a
 loadGrid cells = Grid gridArray
   where
     gridBounds = ((0, 0), (gridTiles - 1, gridTiles - 1))
@@ -54,10 +55,10 @@ chunkify _ [] = []
 chunkify i xs = first : chunkify i rest
   where (first, rest) = splitAt i xs
 
-tileSize' :: Double
+tileSize' :: Backend a => FloatType a
 tileSize' = fromIntegral tileSize
 
-instance Backend a => Renderable Grid a where
+instance Backend a => Renderable (Grid a) a where
   render grid@Grid{..} = pictures cells
     where cells = map (\((x,y), cell) ->
             renderOnGrid (x,y)
@@ -66,12 +67,12 @@ instance Backend a => Renderable Grid a where
               Free -> renderFreeCell grid))
             (assocs gridArray)
 
-renderFreeCell :: Backend a => Grid -> Picture a
+renderFreeCell :: Backend a => Grid a -> Picture a
 renderFreeCell Grid{..} = colored gridColor $ rectangle tileSize' tileSize'
 
 data Corner = TL | TR | BL | BR
 
-renderWallCell :: Backend a => (Int, Int) -> Grid -> Picture a
+renderWallCell :: Backend a => (Int, Int) -> Grid a -> Picture a
 renderWallCell (x,y) grid@Grid{..} = pictures
   [ renderFreeCell grid
   , colored wallColor $ pictures $
@@ -100,19 +101,19 @@ renderOnGrid :: Backend a => (Int, Int) -> Picture a -> Picture a
 renderOnGrid (x, y) = translate x' y'
   where [x', y'] = map (fromIntegral . (* tileSize)) [x, gridTiles - 1 - y]
 
-isGridCellFree :: Grid -> (Int, Int)  -> Bool
+isGridCellFree :: Grid a -> (Int, Int)  -> Bool
 isGridCellFree Grid{..} coord
   | inRange (bounds gridArray) coord = gridArray ! coord == Free
   | otherwise = False
 
-isValidDirection :: Grid -> (Int, Int) -> (Int, Int) -> Bool
+isValidDirection :: Grid a -> (Int, Int) -> (Int, Int) -> Bool
 isValidDirection grid location direction =
   isGridCellFree grid (location `addPoints` direction)
 
 addPoints :: (Int, Int) -> (Int, Int) -> (Int, Int)
 addPoints (x1, y1) (x2, y2) = (x1 + x2, y1 + y2)
 
-getRandomDirection :: Grid -> (Int, Int) -> (Int, Int) -> RandomT (Int, Int)
+getRandomDirection :: Grid a -> (Int, Int) -> (Int, Int) -> RandomT (Int, Int)
 getRandomDirection grid location (dx,dy)
   | null validDirections = return (-dx,-dy)
   | otherwise = do
@@ -126,7 +127,7 @@ getRandomCoords :: RandomT [(Int, Int)]
 getRandomCoords = makeRandomT $
   map (\[x,y] -> (x,y)) . chunkify 2 . randomRs (0, gridTiles - 1)
 
-getRandomLocations :: Grid -> Int -> [(Int, Int)] -> RandomT [(Int, Int)]
+getRandomLocations :: Grid a -> Int -> [(Int, Int)] -> RandomT [(Int, Int)]
 getRandomLocations grid numLocations coordsToExclude = do
   coords <- getRandomCoords
   let locs = take numLocations $ nub $ filter

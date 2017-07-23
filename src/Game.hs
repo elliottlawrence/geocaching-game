@@ -15,7 +15,7 @@ import           Renderable
 import           Signal
 import           Types
 
-loadInitialGame :: GetPic a -> [Grid] -> RandomT (Game a)
+loadInitialGame :: GetPic a -> [Grid a] -> RandomT (Game a)
 loadInitialGame getPic grids = do
   levels <- loadLevels getPic grids
   let signal = loadSignal getPic
@@ -37,7 +37,7 @@ loadInitialGame getPic grids = do
 getCurrentLevel :: Game a -> Level a
 getCurrentLevel Game{..} = gameLevels ! gameLevel
 
-getCurrentGrid :: Game a -> Grid
+getCurrentGrid :: Game a -> Grid a
 getCurrentGrid Game{..} = gameGrids !! (gameLevel - 1)
 
 getCurrentCaches :: Game a -> [Cache a]
@@ -77,8 +77,8 @@ getOverlay game@Game{..}
   where
     levelComplete = isLevelComplete (getCurrentLevel game)
 
-    transparentBlue = Color 0 30 60 130
-    white = Color 255 255 255 255
+    transparentBlue = makeColor 0 30 60 130
+    white = makeColor 255 255 255 255
 
     maybeText
       | isGameOver game = Just "Game Over"
@@ -97,8 +97,8 @@ getGutterArea :: Backend a => Game a -> Picture a
 getGutterArea game@Game{..} =
   pictures [levelText, cacheType, livesText, cachesLeftText]
   where
-    gold = Color 239 174 0 255
-    orange = Color 237 100 0 255
+    gold = makeColor 239 174 0 255
+    orange = makeColor 237 100 0 255
 
     createBigText = scale 0.2 0.2 . colored gold . text
     createSmallText = scale 0.15 0.15 . colored orange . text
