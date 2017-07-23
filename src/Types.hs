@@ -1,4 +1,5 @@
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeFamilies           #-}
+{-# LANGUAGE TypeFamilyDependencies #-}
 module Types where
 
 import           Control.Monad.State
