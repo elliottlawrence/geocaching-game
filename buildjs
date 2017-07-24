@@ -7,4 +7,4 @@ cp $(stack path --stack-yaml=js/stack.yaml --local-install-root)/bin/geocaching-
 cp $(stack path --stack-yaml=js/stack.yaml --local-install-root)/bin/geocaching-game-exe.jsexe/out.js docs/out.js
 cp $(stack path --stack-yaml=js/stack.yaml --local-install-root)/bin/geocaching-game-exe.jsexe/runmain.js docs/runmain.js
 
-# http-server docs
+http-server docs

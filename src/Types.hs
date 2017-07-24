@@ -116,13 +116,11 @@ class (Floating (FloatType a)) => Backend a where
 
   blank :: Picture a
   colored :: Color a -> Picture a -> Picture a
-  circleSolid :: FloatType a -> Picture a
+  circle :: FloatType a -> Picture a
   line :: FloatType a -> FloatType a ->
     FloatType a -> FloatType a -> Picture a
   pictures :: [Picture a] -> Picture a
-  polygon :: [(FloatType a, FloatType a)] -> Picture a
   rectangle :: FloatType a -> FloatType a -> Picture a
-  rectangle w h = polygon [(0, 0), (w, 0), (w, h), (0, h)]
   text :: TextSize -> String -> Picture a
   translate :: FloatType a -> FloatType a -> Picture a -> Picture a
 

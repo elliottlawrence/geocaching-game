@@ -55,8 +55,8 @@ chunkify _ [] = []
 chunkify i xs = first : chunkify i rest
   where (first, rest) = splitAt i xs
 
-tileSize' :: Backend a => FloatType a
-tileSize' = fromIntegral tileSize
+halfTile :: Backend a => FloatType a
+halfTile = tileSize / 2
 
 instance Backend a => Renderable (Grid a) a where
   render grid@Grid{..} = pictures cells
@@ -68,38 +68,35 @@ instance Backend a => Renderable (Grid a) a where
             (assocs gridArray)
 
 renderFreeCell :: Backend a => Grid a -> Picture a
-renderFreeCell Grid{..} = colored gridColor $ rectangle tileSize' tileSize'
+renderFreeCell Grid{..} = colored gridColor $ rectangle tileSize tileSize
 
 data Corner = TL | TR | BL | BR
 
 renderWallCell :: Backend a => (Int, Int) -> Grid a -> Picture a
 renderWallCell (x,y) grid@Grid{..} = pictures
   [ renderFreeCell grid
-  , colored wallColor $ pictures $
-    translate halfTile halfTile (circleSolid halfTile) :
-    corners
+  , colored wallColor $ pictures $ circle halfTile : corners
   ]
   where
-    halfTile = tileSize' / 2
     quarterWall = rectangle halfTile halfTile
+    quarterTile = halfTile / 2
 
-    renderCorner TL = quarterWall
-    renderCorner TR = translate halfTile 0 quarterWall
-    renderCorner BL = translate 0 halfTile quarterWall
-    renderCorner BR = translate halfTile halfTile quarterWall
+    renderCorner TL = translate (-quarterTile) (-quarterTile) quarterWall
+    renderCorner TR = translate quarterTile (-quarterTile) quarterWall
+    renderCorner BL = translate (-quarterTile) quarterTile quarterWall
+    renderCorner BR = translate quarterTile quarterTile quarterWall
 
-    getAdjacentCells TL = [(x-1, y), (x, y+1)]
-    getAdjacentCells TR = [(x+1, y), (x, y+1)]
-    getAdjacentCells BL = [(x-1, y), (x, y-1)]
-    getAdjacentCells BR = [(x, y-1), (x+1, y)]
+    getAdjacentCells TL = [(x-1, y), (x, y-1)]
+    getAdjacentCells TR = [(x+1, y), (x, y-1)]
+    getAdjacentCells BL = [(x-1, y), (x, y+1)]
+    getAdjacentCells BR = [(x, y+1), (x+1, y)]
 
     hasCorner corner = any (not . isGridCellFree grid) (getAdjacentCells corner)
     corners = [ renderCorner corner | corner <- [TL, TR, BL, BR], hasCorner corner ]
 
-
 renderOnGrid :: Backend a => (Int, Int) -> Picture a -> Picture a
-renderOnGrid (x, y) = translate x' y'
-  where [x', y'] = map (fromIntegral . (* tileSize)) [x, gridTiles - 1 - y]
+renderOnGrid (x, y) = translate (x' + halfTile) (y' + halfTile)
+  where [x', y'] = map (fromIntegral . (* tileSize)) [x, y]
 
 isGridCellFree :: Grid a -> (Int, Int)  -> Bool
 isGridCellFree Grid{..} coord

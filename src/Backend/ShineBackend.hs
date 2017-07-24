@@ -52,10 +52,10 @@ instance Backend ShineBackend where
 
   blank = Empty
   colored = Colored
-  circleSolid = CircleF
+  circle = CircleF
   line = Line
   pictures = foldl (<>) Empty
-  polygon = Polygon
+  rectangle = RectF
   text textSize = Text font LeftAlign Nothing
     where font = case textSize of
                   BigText -> "24px sans-serif"

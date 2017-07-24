@@ -9,11 +9,11 @@ numLevels, numLives :: Int
 numLevels = 10
 numLives = 5
 
-gridTiles, gridSize, gutter, tileSize, windowX, windowY :: Int
+gridTiles, gridSize, gutter, tileSize, windowX, windowY :: Num a => a
 gridTiles = 25
-tileSize = 20
 gridSize = gridTiles * tileSize
 gutter = 250
+tileSize = 20
 windowX = gutter + gridSize
 windowY = gridSize
 

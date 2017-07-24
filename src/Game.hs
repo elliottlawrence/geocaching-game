@@ -54,7 +54,7 @@ instance Backend a => Renderable (Game a) a where
   render game@Game{..} = pictures
     [ render compass
     , getGutterArea game
-    , translate (fromIntegral gutter) 0 gridArea
+    , translate gutter 0 gridArea
     ]
     where
       gridArea = pictures
@@ -69,16 +69,16 @@ instance Backend a => Renderable (Game a) a where
 getOverlay :: Backend a => Game a -> Picture a
 getOverlay game@Game{..}
   | isGameOver game || levelComplete =
-    pictures
-      [ colored transparentBlue $ rectangle (fromIntegral gridSize) (fromIntegral windowY)
-      , textPicture
-      ]
+    translate (gridSize / 2) (windowY / 2) $
+    pictures [background, textPicture]
   | otherwise = blank
   where
     levelComplete = isLevelComplete (getCurrentLevel game)
 
     transparentBlue = makeColor 0 30 60 130
     white = makeColor 255 255 255 255
+
+    background = colored transparentBlue $ rectangle gridSize windowY
 
     maybeText
       | isGameOver game = Just "Game Over"
@@ -87,9 +87,7 @@ getOverlay game@Game{..}
       | otherwise = Nothing
     textPicture = maybe
       blank
-      (translate (fromIntegral gridSize / 2 - 80) (fromIntegral windowY / 2 - 10) .
-        colored white .
-        text BigText)
+      (translate (-80) 10 . colored white . text BigText)
       maybeText
 
 getGutterArea :: Backend a => Game a -> Picture a
@@ -102,11 +100,11 @@ getGutterArea game@Game{..} =
     createBigText = colored gold . text BigText
     createSmallText = colored orange . text SmallText
 
-    levelText = translate 10 460 $ createBigText $ "Level " ++ show gameLevel ++ ":"
-    cacheType = translate 10 430 $ createBigText levelName
+    levelText = translate 10 40 $ createBigText $ "Level " ++ show gameLevel ++ ":"
+    cacheType = translate 10 70 $ createBigText levelName
 
-    livesText = translate 10 350 $ createSmallText $ "Lives: " ++ show (signalLives signal)
-    cachesLeftText = translate 10 320 $ createSmallText $ "Caches left: " ++ show cachesLeft
+    livesText = translate 10 150 $ createSmallText $ "Lives: " ++ show (signalLives signal)
+    cachesLeftText = translate 10 180 $ createSmallText $ "Caches left: " ++ show cachesLeft
 
     level@Level{..} = getCurrentLevel game
     cachesLeft = getCachesLeft level

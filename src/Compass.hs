@@ -17,10 +17,10 @@ loadCompass getPic signal caches = Compass
   }
 
 instance Backend a => Renderable (Compass a) a where
-  render Compass{..} = pictures [compassPic, needle]
-    where needle = translate 125 125 $
-            colored black $
-            line 0 0 (needleLength * cos rads) (needleLength * sin rads)
+  render Compass{..} = translate 125 (windowY - 125) $
+    pictures [compassPic, needle]
+    where needle = colored black $
+            line 0 0 (needleLength * cos rads) (-needleLength * sin rads)
           needleLength = 75
           rads = fromIntegral compassAngle * pi / 180
 

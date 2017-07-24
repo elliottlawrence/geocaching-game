@@ -30,15 +30,14 @@ instance Backend GlossBackend where
       window = InWindow "Geocaching Game" (windowX, windowY) (200, 200)
       renderGame' = applyViewPortToPicture viewPort . renderGame
       viewPort = viewPortInit {
-        viewPortTranslate = (-fromIntegral windowX/2, -fromIntegral windowY/2)
+        viewPortTranslate = (-windowX/2, windowY/2)
       }
       updateGame' _ = updateGame
 
   loadImage path = do
     png <- loadJuicyPNG path'
     case png of
-      Just bmp@(Bitmap w h _ _) -> return $
-        Translate (fromIntegral w/2) (fromIntegral h/2) bmp
+      Just bmp -> return bmp
       _ -> ioError $ userError $ "File not found: " ++ path'
     where path' = prefixPath path
 
@@ -47,14 +46,14 @@ instance Backend GlossBackend where
   makeColor = makeColorI
 
   blank = Blank
-  circleSolid = Gloss.circleSolid
+  circle = Gloss.circleSolid
   colored = Color
-  line x1 y1 x2 y2 = Line [(x1,y1), (x2,y2)]
+  line x1 y1 x2 y2 = Line [(x1,-y1), (x2,-y2)]
   pictures = Pictures
-  polygon = Polygon
+  rectangle = rectangleSolid
   text BigText = Scale 0.2 0.2 . Text
   text SmallText = Scale 0.15 0.15 . Text
-  translate = Translate
+  translate x y = Translate x (-y)
 
   toEvent (Gloss.EventKey key keyState _ _) =
     maybe Nothing (\key' -> Just $ EventKey key' keyState') maybeKey
