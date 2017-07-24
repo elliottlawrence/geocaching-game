@@ -36,9 +36,9 @@ gridColors =
   , makeColor 139 255 196 255
   ]
 
-loadGrids :: Backend a => IO [Grid a]
-loadGrids = do
-  gridData <- readFile "docs/grids.txt"
+loadGrids :: Backend a => a -> IO [Grid a]
+loadGrids b = do
+  gridData <- loadFile b "grids.txt"
   let cellChunks = chunkify (gridTiles ^ (2 :: Int)) (map read $ words gridData)
       grids = take numLevels $ cycle $ zipWith loadGrid cellChunks gridColors
   return grids

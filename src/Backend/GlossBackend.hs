@@ -1,8 +1,8 @@
 {-# LANGUAGE TypeFamilies #-}
 module Backend.GlossBackend where
 
-import qualified Graphics.Gloss                     as Gloss
-import qualified Graphics.Gloss.Data.ViewPort       as Gloss
+import           Graphics.Gloss                     as Gloss
+import           Graphics.Gloss.Data.ViewPort       as Gloss
 import qualified Graphics.Gloss.Interface.Pure.Game as Gloss
 import           Graphics.Gloss.Juicy
 
@@ -15,58 +15,65 @@ instance Backend GlossBackend where
   type FloatType GlossBackend = Float
   type Picture GlossBackend = Gloss.Picture
   type Color GlossBackend = Gloss.Color
+  type EventT GlossBackend = Gloss.Event
 
-  play _ fps initialGame renderGame handleInput updateGame =
+  play _ initialGame renderGame handleInput updateGame =
     Gloss.play
       window
       Gloss.black
-      fps
+      60
       initialGame
       renderGame'
-      handleInput'
+      (makeHandleInput handleInput)
       updateGame'
     where
-      window = Gloss.InWindow "Geocaching Game" (windowX, windowY) (200, 200)
-      renderGame' = Gloss.applyViewPortToPicture viewPort . renderGame
-      viewPort = Gloss.viewPortInit {
-        Gloss.viewPortTranslate = (-fromIntegral windowX/2, -fromIntegral windowY/2)
+      window = InWindow "Geocaching Game" (windowX, windowY) (200, 200)
+      renderGame' = applyViewPortToPicture viewPort . renderGame
+      viewPort = viewPortInit {
+        viewPortTranslate = (-fromIntegral windowX/2, -fromIntegral windowY/2)
       }
-      handleInput' event game = maybe game (`handleInput` game) (toEvent event)
       updateGame' _ = updateGame
 
   loadImage path = do
-    png <- loadJuicyPNG path
+    png <- loadJuicyPNG path'
     case png of
-      Just bmp@(Gloss.Bitmap w h _ _) -> return $
-        Gloss.Translate (fromIntegral w/2) (fromIntegral h/2) bmp
-      _ -> ioError $ userError $ "File not found: " ++ path
+      Just bmp@(Bitmap w h _ _) -> return $
+        Translate (fromIntegral w/2) (fromIntegral h/2) bmp
+      _ -> ioError $ userError $ "File not found: " ++ path'
+    where path' = prefixPath path
 
-  makeColor = Gloss.makeColorI
+  loadFile _ = readFile . prefixPath
 
-  blank = Gloss.Blank
+  makeColor = makeColorI
+
+  blank = Blank
   circleSolid = Gloss.circleSolid
-  colored = Gloss.Color
-  line = Gloss.Line
-  pictures = Gloss.Pictures
-  polygon = Gloss.Polygon
-  scale = Gloss.Scale
-  text = Gloss.Text
-  translate = Gloss.Translate
+  colored = Color
+  line x1 y1 x2 y2 = Line [(x1,y1), (x2,y2)]
+  pictures = Pictures
+  polygon = Polygon
+  text BigText = Scale 0.2 0.2 . Text
+  text SmallText = Scale 0.15 0.15 . Text
+  translate = Translate
 
-toEvent :: Gloss.Event -> Maybe Event
-toEvent (Gloss.EventKey key keyState _ _) =
-  maybe Nothing (\key' -> Just $ EventKey key' (toKeyState keyState)) maybeKey
-  where
-    toKeyState Gloss.Up = Up
-    toKeyState Gloss.Down = Down
+  toEvent (Gloss.EventKey key keyState _ _) =
+    maybe Nothing (\key' -> Just $ EventKey key' keyState') maybeKey
+    where
+      keyState' = case keyState of
+        Gloss.Up -> Up
+        Gloss.Down -> Down
 
-    maybeKey = case key of
-      Gloss.SpecialKey Gloss.KeyLeft -> Just KeyLeft
-      Gloss.SpecialKey Gloss.KeyRight -> Just KeyRight
-      Gloss.SpecialKey Gloss.KeyUp -> Just KeyUp
-      Gloss.SpecialKey Gloss.KeyDown -> Just KeyDown
-      Gloss.SpecialKey Gloss.KeySpace -> Just KeySpace
-      Gloss.SpecialKey Gloss.KeyEnter -> Just KeyEnter
-      Gloss.Char c -> Just (Char c)
-      _ -> Nothing
-toEvent _ = Nothing
+      maybeKey = case key of
+        Gloss.SpecialKey Gloss.KeyLeft -> Just KeyLeft
+        Gloss.SpecialKey Gloss.KeyRight -> Just KeyRight
+        Gloss.SpecialKey Gloss.KeyUp -> Just KeyUp
+        Gloss.SpecialKey Gloss.KeyDown -> Just KeyDown
+        Gloss.SpecialKey Gloss.KeySpace -> Just KeySpace
+        Gloss.SpecialKey Gloss.KeyEnter -> Just KeyEnter
+        Gloss.Char c -> Just (Char c)
+        _ -> Nothing
+  toEvent _ = Nothing
+
+
+prefixPath :: FilePath -> FilePath
+prefixPath = (++) "docs/"

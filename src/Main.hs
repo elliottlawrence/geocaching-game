@@ -12,12 +12,11 @@ import           Utils
 main :: IO ()
 main = do
   getPic <- loadGetPic
-  grids <- loadGrids
+  grids <- loadGrids defaultBackend
   initialGame <- randomToIO $ loadInitialGame getPic grids
 
   play
     defaultBackend
-    60  -- fps
     initialGame
     render
     handleInput

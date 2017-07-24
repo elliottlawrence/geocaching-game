@@ -20,7 +20,7 @@ instance Backend a => Renderable (Compass a) a where
   render Compass{..} = pictures [compassPic, needle]
     where needle = translate 125 125 $
             colored black $
-            line [(0, 0), (needleLength * cos rads, needleLength * sin rads)]
+            line 0 0 (needleLength * cos rads) (needleLength * sin rads)
           needleLength = 75
           rads = fromIntegral compassAngle * pi / 180
 

@@ -9,7 +9,7 @@ getPicNameForLevel :: Int -> PictureName
 getPicNameForLevel i = toEnum $ fromEnum Level1Pic + i - 1
 
 getPicPath :: PictureName -> FilePath
-getPicPath picName = "docs/images/" ++ name ++ ".png"
+getPicPath picName = "images/" ++ name ++ ".png"
   where constructorName = show picName
         name = map toLower
           $ take (length constructorName - length "Pic") constructorName

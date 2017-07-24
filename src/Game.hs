@@ -88,9 +88,8 @@ getOverlay game@Game{..}
     textPicture = maybe
       blank
       (translate (fromIntegral gridSize / 2 - 80) (fromIntegral windowY / 2 - 10) .
-        scale 0.2 0.2 .
         colored white .
-        text)
+        text BigText)
       maybeText
 
 getGutterArea :: Backend a => Game a -> Picture a
@@ -100,8 +99,8 @@ getGutterArea game@Game{..} =
     gold = makeColor 239 174 0 255
     orange = makeColor 237 100 0 255
 
-    createBigText = scale 0.2 0.2 . colored gold . text
-    createSmallText = scale 0.15 0.15 . colored orange . text
+    createBigText = colored gold . text BigText
+    createSmallText = colored orange . text SmallText
 
     levelText = translate 10 460 $ createBigText $ "Level " ++ show gameLevel ++ ":"
     cacheType = translate 10 430 $ createBigText levelName

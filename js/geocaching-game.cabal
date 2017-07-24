@@ -18,12 +18,16 @@ executable geocaching-game-exe
   cpp-options:         -DGHCJS_BROWSER
   build-depends:       base
                      , array
+                     , ghcjs-base
                      , ghcjs-dom-jsffi
+                     , keycode
                      , mtl
                      , random
                      , shine
   default-language:    Haskell2010
-  other-modules:       Cache
+  other-modules:       Backend
+                     , Backend.ShineBackend
+                     , Cache
                      , Compass
                      , Constants
                      , Enemy
