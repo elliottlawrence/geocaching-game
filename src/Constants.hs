@@ -3,7 +3,10 @@ module Constants where
 import           Types
 
 isDebug :: Bool
-isDebug = True
+isDebug = False
+
+isFullscreen :: Bool
+isFullscreen = True
 
 numLevels, numLives :: Int
 numLevels = 10

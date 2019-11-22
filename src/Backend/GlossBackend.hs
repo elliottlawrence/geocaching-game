@@ -27,10 +27,12 @@ instance Backend GlossBackend where
       (makeHandleInput handleInput)
       updateGame'
     where
-      window = InWindow "Geocaching Game" (windowX, windowY) (200, 200)
+      window = if isFullscreen then FullScreen
+               else InWindow "Geocaching Game" (windowX, windowY) (200, 200)
       renderGame' = applyViewPortToPicture viewPort . renderGame
       viewPort = viewPortInit {
-        viewPortTranslate = (-windowX/2, windowY/2)
+        viewPortTranslate = (-windowX/2, windowY/2),
+        viewPortScale = if isFullscreen then 2 else 1
       }
       updateGame' _ = updateGame
 
